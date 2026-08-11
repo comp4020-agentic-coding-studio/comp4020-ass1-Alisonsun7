@@ -182,3 +182,6 @@ debugging the same thing again.
 - **`pnpm check` is `&&`-chained,** so a stylelint error stops vitest from
   running at all. A green test count after a lint failure is not a thing you
   have seen --- re-run after fixing the lint.
+- **stylelint's `media-feature-range-notation` rejects `@media (min-width:
+  900px)`.** Write range-context syntax instead: `@media (width >= 900px)`.
+  Same for `max-width`.

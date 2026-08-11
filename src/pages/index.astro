@@ -1,5 +1,9 @@
 ---
 import "../styles/global.css";
+import "../styles/simulation.css";
+import SimControls from "../components/SimControls.astro";
+import SimMetrics from "../components/SimMetrics.astro";
+import SimVisual from "../components/SimVisual.astro";
 ---
 
 <!doctype html>
@@ -7,7 +11,7 @@ import "../styles/global.css";
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>COMP4020 prototype</title>
+    <title>Phantom traffic jams — COMP4020 prototype</title>
   </head>
   <body>
     <header>
@@ -16,11 +20,24 @@ import "../styles/global.css";
       </nav>
     </header>
     <main>
-      <h1>COMP4020 prototype</h1>
-      <p data-testid="intro">
-        Replace this with your prototype. This week's brief is on the course website;
-        <code>spec/README.md</code> explains how the checks in this repo relate to it.
+      <h1>Why does traffic jam for no reason?</h1>
+      <p class="lede">
+        No accident. No red light. No lane closure. Just enough cars, following a little too
+        closely, reacting a little too slowly — and a single tap on the brakes turns into a wave
+        that outlives whatever caused it.
       </p>
+
+      <div class="sim-layout">
+        <SimVisual />
+        <div class="sim-side">
+          <SimControls />
+          <SimMetrics />
+        </div>
+      </div>
     </main>
+    <script>
+      import { initTrafficSim } from "../scripts/traffic-sim.client";
+      initTrafficSim();
+    </script>
   </body>
 </html>
