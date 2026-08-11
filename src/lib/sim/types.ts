@@ -67,3 +67,15 @@ export interface ClassifyStateParams {
   jamWaveThreshold: number;
   jamSpeedThreshold: number; // absolute speed, not a fraction — caller resolves vMax
 }
+
+export interface SliderRange {
+  min: number;
+  max: number;
+  step: number;
+}
+
+// The three params exposed as sliders; presets and UI controls are both
+// validated against these ranges.
+export const CAR_COUNT_RANGE: SliderRange = { min: 15, max: 60, step: 1 };
+export const REACTION_TIME_RANGE: SliderRange = { min: 0.1, max: 2, step: 0.1 };
+export const FOLLOWING_DISTANCE_RANGE: SliderRange = { min: 5, max: 30, step: 1 };
