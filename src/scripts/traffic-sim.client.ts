@@ -1,7 +1,12 @@
+import { drawSparkline } from "../lib/render/chart-canvas";
 import { drawRoad } from "../lib/render/road-canvas";
+import { computeDensity } from "../lib/sim/metrics";
 import { Simulation } from "../lib/sim/simulation";
 import { BRAKE_TAP_DURATION_SECONDS, DEFAULT_PARAMS } from "../lib/sim/types";
 import type { SimParams } from "../lib/sim/types";
+
+const METRES_PER_SECOND_TO_KMH = 3.6;
+const METRES_TO_KM = 1000;
 
 const BRAKE_TAP_CAR_ID = 0;
 
@@ -23,11 +28,18 @@ export function initTrafficSim(): void {
   const carCountOutput = document.querySelector<HTMLOutputElement>("#car-count-output");
   const reactionTimeOutput = document.querySelector<HTMLOutputElement>("#reaction-time-output");
   const followingDistanceOutput = document.querySelector<HTMLOutputElement>("#following-distance-output");
+  const chartCanvasEl = document.querySelector<HTMLCanvasElement>("#chart-canvas");
+  const avgSpeedEl = document.querySelector("#metric-avg-speed");
+  const densityEl = document.querySelector("#metric-density");
+  const waveStrengthEl = document.querySelector("#metric-wave-strength");
 
   const roadCtxEl = roadCanvasEl?.getContext("2d");
-  if (!roadCanvasEl || !roadCtxEl) return;
+  const chartCtxEl = chartCanvasEl?.getContext("2d");
+  if (!roadCanvasEl || !roadCtxEl || !chartCanvasEl || !chartCtxEl) return;
   const canvas: HTMLCanvasElement = roadCanvasEl;
   const ctx: CanvasRenderingContext2D = roadCtxEl;
+  const chartCanvas: HTMLCanvasElement = chartCanvasEl;
+  const chartCtx: CanvasRenderingContext2D = chartCtxEl;
 
   let params: SimParams = { ...DEFAULT_PARAMS };
   const sim = new Simulation(params);
@@ -38,7 +50,11 @@ export function initTrafficSim(): void {
   }
 
   resizeCanvasToDisplaySize(canvas, ctx);
-  window.addEventListener("resize", () => resizeCanvasToDisplaySize(canvas, ctx));
+  resizeCanvasToDisplaySize(chartCanvas, chartCtx);
+  window.addEventListener("resize", () => {
+    resizeCanvasToDisplaySize(canvas, ctx);
+    resizeCanvasToDisplaySize(chartCanvas, chartCtx);
+  });
 
   carCountInput?.addEventListener("input", () => {
     const carCount = Number(carCountInput.value);
@@ -81,6 +97,21 @@ export function initTrafficSim(): void {
       width: canvas.clientWidth,
       height: canvas.clientHeight,
     });
+    drawSparkline(chartCtx, snapshot.speedHistory, {
+      width: chartCanvas.clientWidth,
+      height: chartCanvas.clientHeight,
+    }, { maxValue: snapshot.params.vMax });
+
+    if (avgSpeedEl) {
+      avgSpeedEl.textContent = `${Math.round(snapshot.avgSpeed * METRES_PER_SECOND_TO_KMH)} km/h`;
+    }
+    if (densityEl) {
+      const carsPerKm = computeDensity(snapshot.cars, snapshot.params.trackLength) * METRES_TO_KM;
+      densityEl.textContent = `${carsPerKm.toFixed(1)} cars/km`;
+    }
+    if (waveStrengthEl) {
+      waveStrengthEl.textContent = snapshot.waveStrength.toFixed(2);
+    }
 
     requestAnimationFrame(frame);
   }
