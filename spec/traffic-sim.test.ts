@@ -39,6 +39,8 @@ describe("traffic simulator: controls", () => {
 
       const label = doc.querySelector(`label[for="${id}"]`);
       expect(label, `#${id} needs a <label for="${id}">`).toBeTruthy();
+
+      expect(input?.getAttribute("aria-valuetext")?.trim()).not.toBe("");
     });
   }
 

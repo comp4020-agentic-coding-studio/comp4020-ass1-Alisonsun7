@@ -69,14 +69,23 @@ export function initTrafficSim(): void {
   }
 
   function syncControlsToParams(): void {
-    if (carCountInput) carCountInput.value = String(params.carCount);
+    if (carCountInput) {
+      carCountInput.value = String(params.carCount);
+      carCountInput.setAttribute("aria-valuetext", `${params.carCount} cars`);
+    }
     if (carCountOutput) carCountOutput.textContent = `${params.carCount} cars`;
     canvas.setAttribute("aria-label", `Circular road with ${params.carCount} cars`);
 
-    if (reactionTimeInput) reactionTimeInput.value = String(params.reactionTimeSeconds);
+    if (reactionTimeInput) {
+      reactionTimeInput.value = String(params.reactionTimeSeconds);
+      reactionTimeInput.setAttribute("aria-valuetext", `${params.reactionTimeSeconds.toFixed(1)} seconds`);
+    }
     if (reactionTimeOutput) reactionTimeOutput.textContent = `${params.reactionTimeSeconds.toFixed(1)} s`;
 
-    if (followingDistanceInput) followingDistanceInput.value = String(params.safeFollowingDistance);
+    if (followingDistanceInput) {
+      followingDistanceInput.value = String(params.safeFollowingDistance);
+      followingDistanceInput.setAttribute("aria-valuetext", `${params.safeFollowingDistance} metres`);
+    }
     if (followingDistanceOutput) followingDistanceOutput.textContent = `${params.safeFollowingDistance} m`;
   }
 
@@ -87,23 +96,21 @@ export function initTrafficSim(): void {
     resizeCanvasToDisplaySize(chartCanvas, chartCtx);
   });
 
+  syncControlsToParams();
+
   carCountInput?.addEventListener("input", () => {
-    const carCount = Number(carCountInput.value);
-    updateParams({ carCount });
-    if (carCountOutput) carCountOutput.textContent = `${carCount} cars`;
-    canvas.setAttribute("aria-label", `Circular road with ${carCount} cars`);
+    updateParams({ carCount: Number(carCountInput.value) });
+    syncControlsToParams();
   });
 
   reactionTimeInput?.addEventListener("input", () => {
-    const reactionTimeSeconds = Number(reactionTimeInput.value);
-    updateParams({ reactionTimeSeconds });
-    if (reactionTimeOutput) reactionTimeOutput.textContent = `${reactionTimeSeconds.toFixed(1)} s`;
+    updateParams({ reactionTimeSeconds: Number(reactionTimeInput.value) });
+    syncControlsToParams();
   });
 
   followingDistanceInput?.addEventListener("input", () => {
-    const safeFollowingDistance = Number(followingDistanceInput.value);
-    updateParams({ safeFollowingDistance });
-    if (followingDistanceOutput) followingDistanceOutput.textContent = `${safeFollowingDistance} m`;
+    updateParams({ safeFollowingDistance: Number(followingDistanceInput.value) });
+    syncControlsToParams();
   });
 
   brakeButton?.addEventListener("click", () => {
@@ -114,8 +121,7 @@ export function initTrafficSim(): void {
     button.addEventListener("click", () => {
       const preset = PRESETS.find((candidate) => candidate.id === button.dataset.preset);
       if (!preset) return;
-      params = applyPreset(params, preset);
-      sim.setParams(params);
+      updateParams(applyPreset(params, preset));
       syncControlsToParams();
     });
   }
