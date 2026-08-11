@@ -1,85 +1,69 @@
 # Process overview
 
-<!-- TEMPLATE: this file is a shape to fill in, not a form. Replace everything
-     in it with your own overview, and delete this comment — `pnpm
-     check:evidence` will remind you if it's still here. -->
-
-A reading-guide to how the work came together --- a map to your process, not an
-essay about it. Markers read this file and follow its citations; they don't
-trawl the repo for evidence you didn't point at, so if a moment mattered, cite
-it.
-
-This file is the shape; the course site's
-[assessment page](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#what-you-submit)
-is the requirement, and its
-[word counts](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#word-counts)
-cover every deliverable.
+A reading-guide to how the work came together — a map to your process, not an
+essay about it.
 
 ## What I built
 
-One paragraph: the thing, and the idea behind it.
+An interactive explainer for phantom traffic jams: a circular road of cars
+whose speed depends only on the gap ahead, a delayed reaction, and a following
+distance. Three sliders and a brake-tap button let a visitor push the same
+system between two regimes — a tap that dissolves, and a tap that grows into a
+standing wave — to make the point that a jam doesn't need an accident or a red
+light, just the wrong combination of density, distance, and delay.
 
 ## The moments that mattered
 
-Three or four for an assignment; fewer is fine for a weekly prototype. Keep the
-list short so each moment has room to do all four jobs:
+1. **Delay as a ring buffer, not a smoothed average.** The obvious way to model
+   driver reaction time is to exponentially smooth the perceived gap/velocity.
+   I used a fixed-length ring buffer instead, so a car's decision at tick `t`
+   reads a real sample from `t − reactionTicks` ago rather than a blended
+   value. Smoothing damps a signal; it doesn't create the phase lag that lets a
+   disturbance outrun a driver's correction, which is the actual mechanism the
+   whole simulator is meant to demonstrate. I chose the ring buffer *before*
+   writing the amplify/decay tests, specifically because a smoothed model would
+   have made those tests unfalsifiable — any parameter set would just settle,
+   never sustain a wave —
+   ([`26abb8e`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Alisonsun7/commit/26abb8e)).
 
-1. **what happened** --- the problem, or the thing the agent got wrong
-2. **what you did instead of the obvious thing** --- the call you made, and why
-   it beat the obvious one
-3. **how you knew it was right** --- the check you ran, the viewport you looked
-   at, what you read before accepting the diff
-4. **the citation** --- a commit or commit range, a `CLAUDE.md` change, a check
-   that went from red to green, a prompt paired with the commit it produced
+2. **Measuring the model before asserting on it.** Rather than guess parameter
+   values for the "thesis" test and iterate until assertions passed, I first
+   ran a throwaway probe script logging wave strength and average speed over
+   900 ticks for several candidate scenarios, and read the actual traces. That
+   surfaced two genuinely distinct regimes — a damped oscillation that decays
+   within a few seconds, and a wave that sustains or grows — and the specific
+   parameter sets that produce each became both the test fixtures and the
+   "Sunday morning" / "school pickup" presets a visitor sees
+   ([`6516933`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Alisonsun7/commit/6516933)).
+   That's how I knew the demo wasn't just plausible-looking: the numbers came
+   from watching the model, not from tuning it to match a claim I'd already
+   decided was true.
 
-Jobs 2 and 3 are the ones the repo can't tell a reader on its own, so they're
-where the marks are. The strongest moments are the ones where a correction
-landed in the **harness** rather than in another prompt --- a rule added to
-`CLAUDE.md`, a check wired up, an attempt thrown away: re-prompting until it
-passes is the routine case, and changing what the agent works against is the
-skilled one.
+3. **A closure-narrowing bug, and a self-inflicted one on top of it.**
+   `astro check` flagged three "possibly null" errors inside the RAF `frame()`
+   closure, even though an early-return guard above it had already checked the
+   same variables — TypeScript doesn't carry that narrowing into a nested
+   function. Fixing it, I used a broad `replace_all` rename that collided with
+   a variable of the intended target name already in scope, producing a
+   self-referential `const canvas = canvas`. I caught it by re-reading the diff
+   before running checks rather than trusting the rename, and fixed both issues
+   by rewriting the file with distinct, non-colliding names for the nullable
+   and non-null bindings
+   ([`3fd1537`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Alisonsun7/commit/3fd1537)).
+   The lesson that stuck enough to write down: a blanket rename is only safe
+   when the new name isn't already live somewhere else in the same scope.
 
-Cite each moment as a link whose text is the commit hash or range and whose
-target is this repo's commit or compare URL, so a reader clicks straight to the
-evidence:
-
-- one commit: [`a1b2c3d`](https://github.com/YOUR-ORG/YOUR-REPO/commit/a1b2c3d)
-- a range:
-  [`a1b2c3d...e4f5a6b`](https://github.com/YOUR-ORG/YOUR-REPO/compare/a1b2c3d...e4f5a6b)
-
-To pair a prompt with the commit it produced, quote the prompt (curated, not a
-full transcript) next to the citation:
-
-> the prompt, verbatim
-
-Screenshots are welcome where one carries the verification better than a
-sentence does. Commit the file to this repo and link it with a **relative**
-path, which is what makes it render on GitHub: `![alt text](docs/before.png)`.
-Images don't count towards the word count and don't replace the citation.
-
-### A worked moment, for shape
-
-Delete this section along with the rest of the boilerplate --- it's here to show
-the four jobs in one paragraph, not to be imitated in content.
-
-> The date formatter kept coming back with `toLocaleDateString()` and no locale
-> argument, so the same build rendered differently on my machine and in CI. I'd
-> already re-prompted it twice, which fixed the line but not the habit, so the
-> third time I put the rule in `CLAUDE.md` instead
-> ([`3f9ac21`](https://github.com/YOUR-ORG/YOUR-REPO/commit/3f9ac21)) and added
-> a spec test that fails on a bare `toLocaleDateString`. That's what told me it
-> had actually taken: the test went red against the old code and green against
-> the new, and the next two features it wrote passed it without prompting
-> ([`3f9ac21...b7e0d14`](https://github.com/YOUR-ORG/YOUR-REPO/compare/3f9ac21...b7e0d14)).
+4. **Reading the UI back against its own data.** While polishing, I noticed
+   `Preset.description` — a sentence written for each scenario — was never
+   rendered anywhere; the preset buttons were separately hand-written with just
+   a label, duplicating data that already existed in `presets.ts`. Generating
+   the buttons from `PRESETS` directly and using the description as the
+   accessible label fixed both the duplication and the unused copy in one
+   change
+   ([`f764dec`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Alisonsun7/commit/f764dec)).
 
 ## Before you ship
 
 `pnpm check:evidence` verifies your citations resolve to real commits, that the
 current reflection entry is in `reflections/`, and that your `CLAUDE.md` is
-there --- before a marker ever opens the file. It checks that your map is
-traceable, not that it is good: the marker judges whether your small,
-deliberately chosen set of moments shows real judgement and reflection. A green
-check is not a substitute for that curation.
-
-Images are deliberately not checked, because whether one renders is visible the
-moment you look. Open this file on GitHub and look at it before you ship.
+there — before a marker ever opens the file.
