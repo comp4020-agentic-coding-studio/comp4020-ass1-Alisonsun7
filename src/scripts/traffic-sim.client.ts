@@ -3,10 +3,25 @@ import { drawRoad } from "../lib/render/road-canvas";
 import { computeDensity } from "../lib/sim/metrics";
 import { Simulation } from "../lib/sim/simulation";
 import { BRAKE_TAP_DURATION_SECONDS, DEFAULT_PARAMS } from "../lib/sim/types";
-import type { SimParams } from "../lib/sim/types";
+import type { SimParams, SimState } from "../lib/sim/types";
 
 const METRES_PER_SECOND_TO_KMH = 3.6;
 const METRES_TO_KM = 1000;
+
+const STATE_COPY: Record<SimState, { label: string; explanation: string }> = {
+  stable: {
+    label: "Stable flow.",
+    explanation: "Every car is moving freely — a tap on the brakes dies out almost as fast as it starts.",
+  },
+  unstable: {
+    label: "Wave forming.",
+    explanation: "Speed is bunching up in places — a disturbance is rippling through traffic rather than fading.",
+  },
+  "phantom-jam": {
+    label: "Phantom jam.",
+    explanation: "No accident, no lights — just density, following distance, and reaction time. The wave is sustaining itself.",
+  },
+};
 
 const BRAKE_TAP_CAR_ID = 0;
 
@@ -32,6 +47,8 @@ export function initTrafficSim(): void {
   const avgSpeedEl = document.querySelector("#metric-avg-speed");
   const densityEl = document.querySelector("#metric-density");
   const waveStrengthEl = document.querySelector("#metric-wave-strength");
+  const stateLabelEl = document.querySelector("#sim-state-label");
+  const stateExplanationEl = document.querySelector("#sim-state-explanation");
 
   const roadCtxEl = roadCanvasEl?.getContext("2d");
   const chartCtxEl = chartCanvasEl?.getContext("2d");
@@ -81,6 +98,7 @@ export function initTrafficSim(): void {
 
   let lastTimeMs: number | null = null;
   let accumulatorSeconds = 0;
+  let lastState: SimState | null = null;
 
   function frame(nowMs: number): void {
     if (lastTimeMs === null) lastTimeMs = nowMs;
@@ -111,6 +129,13 @@ export function initTrafficSim(): void {
     }
     if (waveStrengthEl) {
       waveStrengthEl.textContent = snapshot.waveStrength.toFixed(2);
+    }
+
+    if (snapshot.state !== lastState) {
+      lastState = snapshot.state;
+      const copy = STATE_COPY[snapshot.state];
+      if (stateLabelEl) stateLabelEl.textContent = copy.label;
+      if (stateExplanationEl) stateExplanationEl.textContent = copy.explanation;
     }
 
     requestAnimationFrame(frame);
