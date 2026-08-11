@@ -160,3 +160,25 @@ catching you out, a fact about the stack the agent keeps getting wrong --- write
 it down here. Growing this file is the work of harness engineering, and the gap
 between this boilerplate and your own version is part of what your prototype
 says about the developer you're becoming.
+
+## Facts about this stack that kept biting
+
+Each of these cost a red check or a wrong conclusion once. Read them before
+debugging the same thing again.
+
+- **Headless Chrome on macOS will not give you a viewport narrower than
+  ~500px.** `--window-size=390,N` produces a 390px-wide *image* of a ~500px-wide
+  *layout*, cropped — which looks exactly like horizontal overflow and is not.
+  To check the 390×844 marking viewport for real, load the page in a
+  `<iframe width="390">` inside a harness page and screenshot that; an iframe
+  gets its own CSS viewport, so media queries evaluate correctly. Verify the
+  harness itself with a media-query probe page before trusting a phone
+  screenshot.
+- **stylelint's `no-descending-specificity` dictates rule order,** and it is
+  not negotiable by adding a comment. Selectors matching the same element must
+  appear in ascending specificity. For links that means the order
+  `a` → `nav a` → `a:visited` → `nav a:hover`, which reads oddly and is correct.
+  When it complains, reorder; don't disable it.
+- **`pnpm check` is `&&`-chained,** so a stylelint error stops vitest from
+  running at all. A green test count after a lint failure is not a thing you
+  have seen --- re-run after fixing the lint.
