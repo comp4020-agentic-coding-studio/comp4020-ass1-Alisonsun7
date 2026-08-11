@@ -50,9 +50,13 @@ export function drawRoad(
   ctx.stroke();
   ctx.setLineDash([]);
 
+  // Sized from the car's actual physical length (not the average spacing) so
+  // that when cars queue up close together during a jam, their drawn shapes
+  // — which now can never overlap in position, per the model's minimum-gap
+  // floor — never overlap on screen either.
   const circumference = 2 * Math.PI * trackRadius;
-  const spacingPx = cars.length > 0 ? circumference / cars.length : circumference;
-  const carRadius = Math.max(3, Math.min(9, spacingPx * 0.4));
+  const metresToPixels = circumference / params.trackLength;
+  const carRadius = Math.max(2, (params.carLength / 2) * metresToPixels);
 
   for (const car of cars) {
     const fraction = car.position / params.trackLength;
