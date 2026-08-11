@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyBrakeTap, computeGap, createHistoryBuffer, optimalVelocity, stepSimulation } from "./model";
-import { DEFAULT_PARAMS } from "./types";
+import { DEFAULT_PARAMS, MIN_GAP_METRES } from "./types";
 import type { Car, SimParams } from "./types";
 
 function makeCar(id: number, position: number, velocity = 0): Car {
@@ -83,6 +83,32 @@ describe("stepSimulation", () => {
     const next = stepSimulation(cars, { ...params, trackLength: 100 });
     expect(next[0].position).toBeLessThan(100);
     expect(next[0].position).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("stepSimulation — non-overlap floor", () => {
+  it("never lets a car close its gap below MIN_GAP_METRES, even with a long reaction delay", () => {
+    const params: SimParams = {
+      ...DEFAULT_PARAMS,
+      carCount: 10,
+      trackLength: 200,
+      reactionTimeSeconds: 2, // worst case: the reactive model lags as long as possible
+      safeFollowingDistance: 5,
+    };
+    let cars = applyBrakeTap(
+      makeRing(params.carCount, params.trackLength, params.vMax * 0.8),
+      0,
+      Math.round(2 / params.dt), // a long, hard brake — the disturbance most likely to overshoot
+    );
+
+    for (let tick = 0; tick < 300; tick++) {
+      cars = stepSimulation(cars, params);
+      for (let i = 0; i < cars.length; i++) {
+        const ahead = cars[(i + 1) % cars.length];
+        const gap = computeGap(cars[i], ahead, params.trackLength, params.carLength);
+        expect(gap).toBeGreaterThanOrEqual(MIN_GAP_METRES - 1e-6);
+      }
+    }
   });
 });
 

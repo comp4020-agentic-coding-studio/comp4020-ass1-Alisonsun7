@@ -1,10 +1,26 @@
 import { describe, expect, it } from "vitest";
+import { computeGap } from "./model";
 import { Simulation } from "./simulation";
-import { DEFAULT_PARAMS } from "./types";
+import { DEFAULT_PARAMS, MIN_GAP_METRES } from "./types";
 import type { SimParams } from "./types";
 
 function runTicks(sim: Simulation, ticks: number): void {
   for (let i = 0; i < ticks; i++) sim.step();
+}
+
+// Runs `ticks` steps, asserting after every single one that no car has
+// closed its gap below the physical floor — a jam must stay a queue, not a
+// pile-up, at every tick along the way, not just at the end.
+function runTicksAssertingNoOverlap(sim: Simulation, ticks: number): void {
+  for (let i = 0; i < ticks; i++) {
+    sim.step();
+    const { cars, params } = sim.getSnapshot();
+    for (let j = 0; j < cars.length; j++) {
+      const ahead = cars[(j + 1) % cars.length];
+      const gap = computeGap(cars[j], ahead, params.trackLength, params.carLength);
+      expect(gap).toBeGreaterThanOrEqual(MIN_GAP_METRES - 1e-6);
+    }
+  }
 }
 
 // These two scenarios are the assignment's actual thesis, run as code: the
@@ -24,7 +40,7 @@ describe("Simulation — core causal claim", () => {
     runTicks(sim, 90); // settle to equilibrium before disturbing it
     sim.brakeTap(0, Math.round(0.5 / params.dt));
 
-    runTicks(sim, 900); // 30s to let the wave play out
+    runTicksAssertingNoOverlap(sim, 900); // 30s to let the wave play out
     const snap = sim.getSnapshot();
 
     expect(snap.waveStrength).toBeLessThan(0.1);
@@ -42,7 +58,7 @@ describe("Simulation — core causal claim", () => {
     runTicks(sim, 90);
     sim.brakeTap(0, Math.round(0.5 / params.dt));
 
-    runTicks(sim, 900);
+    runTicksAssertingNoOverlap(sim, 900);
     const snap = sim.getSnapshot();
 
     expect(snap.waveStrength).toBeGreaterThan(0.5);

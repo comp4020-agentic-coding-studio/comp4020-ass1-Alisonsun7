@@ -47,6 +47,12 @@ export const DEFAULT_PARAMS: SimParams = {
 export const BRAKE_TAP_DURATION_SECONDS = 0.5;
 export const BRAKE_TAP_VELOCITY_FRACTION = 0.2; // fraction of vMax the tapped car is capped to
 
+// Hard physical floor, independent of the reactive (delayed) model: no car
+// may close its bumper-to-bumper gap below this in a single tick, no matter
+// what its delayed perception says. This is what keeps a jam a queue rather
+// than a pile-up.
+export const MIN_GAP_METRES = 0.5;
+
 // classifyState looks at this many seconds of rolling history so a single
 // momentary blip doesn't instantly flag a jam.
 export const STATE_WINDOW_SECONDS = 3;

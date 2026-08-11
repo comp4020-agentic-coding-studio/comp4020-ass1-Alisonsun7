@@ -1,4 +1,4 @@
-import { BRAKE_TAP_VELOCITY_FRACTION } from "./types";
+import { BRAKE_TAP_VELOCITY_FRACTION, MIN_GAP_METRES } from "./types";
 import type { Car, HistorySample, SimParams } from "./types";
 
 // Fixed ring-buffer capacity for each car's own perceived-history record —
@@ -94,6 +94,15 @@ export function stepSimulation(cars: readonly Car[], params: SimParams): Car[] {
       newVelocity = Math.min(newVelocity, params.vMax * BRAKE_TAP_VELOCITY_FRACTION);
       brakeTicksRemaining -= 1;
     }
+
+    // Hard physical floor: whatever the (delayed) reactive model wants, a car
+    // can never advance further than the *actual* current gap allows minus a
+    // minimum buffer — a real driver's emergency stop, not subject to
+    // perception lag. This is what turns "drives through the car ahead" into
+    // "queues up nose-to-tail" during a jam.
+    const maxAdvance = Math.max(0, gapNow - MIN_GAP_METRES);
+    const maxSpeedFromGap = maxAdvance / params.dt;
+    newVelocity = Math.min(newVelocity, maxSpeedFromGap);
 
     const newPosition = mod(car.position + newVelocity * params.dt, params.trackLength);
 
