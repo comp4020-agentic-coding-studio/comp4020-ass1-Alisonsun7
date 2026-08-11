@@ -50,3 +50,20 @@ export const BRAKE_TAP_VELOCITY_FRACTION = 0.2; // fraction of vMax the tapped c
 // classifyState looks at this many seconds of rolling history so a single
 // momentary blip doesn't instantly flag a jam.
 export const STATE_WINDOW_SECONDS = 3;
+
+// Thresholds for classifyState, tuned against DEFAULT_PARAMS so a genuine
+// phantom jam (not just the brake-tap blip itself) is what trips "phantom-jam".
+export const STABLE_WAVE_THRESHOLD = 0.15;
+export const JAM_WAVE_THRESHOLD = 0.45;
+export const JAM_SPEED_FRACTION = 0.4; // fraction of vMax below which flow counts as jammed
+
+export interface RollingSample {
+  avgSpeed: number;
+  waveStrength: number;
+}
+
+export interface ClassifyStateParams {
+  stableWaveThreshold: number;
+  jamWaveThreshold: number;
+  jamSpeedThreshold: number; // absolute speed, not a fraction — caller resolves vMax
+}
