@@ -42,7 +42,15 @@ jobs:
         if: ${{ !github.event.repository.is_template }}
         run: pnpm check:evidence
       - name: Check internal links
-        run: pnpm dlx linkinator ./dist --silent
+        # astro.config.mjs sets base "/comp4020-ass1-Alisonsun7/" for GitHub
+        # Pages, so every internal link is base-prefixed, but dist/ on disk
+        # has no such prefix (dist/about/, not dist/comp4020-ass1-Alisonsun7/about/).
+        # Rewrite the prefix away before linkinator resolves links against
+        # the local dist/ root, or every page 404s.
+        run: |
+          pnpm dlx linkinator ./dist --silent \
+            --url-rewrite-search '/comp4020-ass1-Alisonsun7/' \
+            --url-rewrite-replace '/'
       - name: Scan for committed secrets
         # Pinned, both halves: the SHA fixes the action's script, and `version`
         # fixes the scanner image, which otherwise floats on :latest. These two
