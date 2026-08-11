@@ -25,6 +25,7 @@ const STATE_COPY: Record<SimState, { label: string; explanation: string }> = {
 };
 
 const BRAKE_TAP_CAR_ID = 0;
+const SPEED_MULTIPLIERS = [1, 2, 4] as const;
 
 function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): void {
   const dpr = window.devicePixelRatio || 1;
@@ -38,6 +39,7 @@ function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, ctx: CanvasRenderi
 export function initTrafficSim(): void {
   const roadCanvasEl = document.querySelector<HTMLCanvasElement>("#road-canvas");
   const brakeButton = document.querySelector<HTMLButtonElement>("#brake-tap-button");
+  const speedToggleButton = document.querySelector<HTMLButtonElement>("#speed-toggle-button");
   const carCountInput = document.querySelector<HTMLInputElement>("#car-count-input");
   const reactionTimeInput = document.querySelector<HTMLInputElement>("#reaction-time-input");
   const followingDistanceInput = document.querySelector<HTMLInputElement>("#following-distance-input");
@@ -117,6 +119,14 @@ export function initTrafficSim(): void {
     sim.brakeTap(BRAKE_TAP_CAR_ID, Math.round(BRAKE_TAP_DURATION_SECONDS / params.dt));
   });
 
+  let simSpeedMultiplier: (typeof SPEED_MULTIPLIERS)[number] = SPEED_MULTIPLIERS[0];
+  speedToggleButton?.addEventListener("click", () => {
+    const currentIndex = SPEED_MULTIPLIERS.indexOf(simSpeedMultiplier);
+    simSpeedMultiplier = SPEED_MULTIPLIERS[(currentIndex + 1) % SPEED_MULTIPLIERS.length];
+    speedToggleButton.textContent = `Speed: ${simSpeedMultiplier}×`;
+    speedToggleButton.setAttribute("aria-label", `Simulation speed, currently ${simSpeedMultiplier}×`);
+  });
+
   for (const button of presetButtons) {
     button.addEventListener("click", () => {
       const preset = PRESETS.find((candidate) => candidate.id === button.dataset.preset);
@@ -132,7 +142,7 @@ export function initTrafficSim(): void {
 
   function frame(nowMs: number): void {
     if (lastTimeMs === null) lastTimeMs = nowMs;
-    accumulatorSeconds += (nowMs - lastTimeMs) / 1000;
+    accumulatorSeconds += ((nowMs - lastTimeMs) / 1000) * simSpeedMultiplier;
     lastTimeMs = nowMs;
 
     while (accumulatorSeconds >= params.dt) {

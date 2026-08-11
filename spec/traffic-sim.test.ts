@@ -49,6 +49,12 @@ describe("traffic simulator: controls", () => {
     expect(button?.tagName).toBe("BUTTON");
   });
 
+  it("has a simulation speed-toggle button", () => {
+    const button = doc.querySelector("#speed-toggle-button");
+    expect(button?.tagName).toBe("BUTTON");
+    expect(button?.getAttribute("aria-label")?.trim()).not.toBe("");
+  });
+
   it("has a preset button for every named scenario", () => {
     const presetButtons = doc.querySelectorAll("[data-preset]");
     expect(presetButtons.length).toBeGreaterThanOrEqual(3);
