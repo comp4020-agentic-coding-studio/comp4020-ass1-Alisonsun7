@@ -1,12 +1,23 @@
 ---
+import { PRESETS } from "../lib/sim/presets";
 ---
 
 <section class="sim-controls" aria-label="Simulation controls">
   <fieldset class="presets">
     <legend>Scenarios</legend>
-    <button type="button" class="preset-button" data-preset="sunday-morning">Sunday morning</button>
-    <button type="button" class="preset-button" data-preset="peak-hour">Peak hour</button>
-    <button type="button" class="preset-button" data-preset="school-pickup">School pickup</button>
+    {
+      PRESETS.map((preset) => (
+        <button
+          type="button"
+          class="preset-button"
+          data-preset={preset.id}
+          title={preset.description}
+          aria-label={`${preset.label}: ${preset.description}`}
+        >
+          {preset.label}
+        </button>
+      ))
+    }
   </fieldset>
 
   <div class="slider-group">
