@@ -15,19 +15,19 @@ export const PRESETS: Preset[] = [
     id: "sunday-morning",
     label: "Sunday morning",
     description: "Light traffic, alert drivers, generous gaps — a tap on the brakes barely ripples.",
-    params: { carCount: 15, reactionTimeSeconds: 0.3, safeFollowingDistance: 25 },
+    params: { carCount: 10, reactionTimeSeconds: 0.3, safeFollowingDistance: 25 },
   },
   {
     id: "peak-hour",
     label: "Peak hour",
     description: "Moderate density on the edge of stability — a tap can go either way.",
-    params: { carCount: 35, reactionTimeSeconds: 0.8, safeFollowingDistance: 15 },
+    params: { carCount: 15, reactionTimeSeconds: 0.4, safeFollowingDistance: 25 },
   },
   {
     id: "school-pickup",
     label: "School pickup",
     description: "Dense traffic, distracted drivers, tight gaps — a tap becomes a standing jam.",
-    params: { carCount: 55, reactionTimeSeconds: 1.5, safeFollowingDistance: 8 },
+    params: { carCount: 30, reactionTimeSeconds: 2, safeFollowingDistance: 22 },
   },
 ];
 

@@ -24,7 +24,7 @@ describe("traffic simulator: visuals", () => {
 
 describe("traffic simulator: controls", () => {
   const sliders: Array<{ id: string; min: string; max: string }> = [
-    { id: "car-count-input", min: "15", max: "60" },
+    { id: "car-count-input", min: "10", max: "30" },
     { id: "reaction-time-input", min: "0.1", max: "2" },
     { id: "following-distance-input", min: "5", max: "30" },
   ];

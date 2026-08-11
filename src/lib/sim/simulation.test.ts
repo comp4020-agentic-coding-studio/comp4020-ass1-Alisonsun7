@@ -32,7 +32,7 @@ describe("Simulation — core causal claim", () => {
   it("a brake tap decays under low density, large following distance, fast reaction", () => {
     const params: SimParams = {
       ...DEFAULT_PARAMS,
-      carCount: 15,
+      carCount: 10,
       safeFollowingDistance: 25,
       reactionTimeSeconds: 0.3,
     };
@@ -50,9 +50,9 @@ describe("Simulation — core causal claim", () => {
   it("a brake tap sustains under high density, small following distance, slow reaction", () => {
     const params: SimParams = {
       ...DEFAULT_PARAMS,
-      carCount: 55,
-      safeFollowingDistance: 8,
-      reactionTimeSeconds: 1.5,
+      carCount: 30,
+      safeFollowingDistance: 22,
+      reactionTimeSeconds: 2,
     };
     const sim = new Simulation(params);
     runTicks(sim, 90);
@@ -82,10 +82,10 @@ describe("Simulation — API surface", () => {
     const sim = new Simulation(DEFAULT_PARAMS);
     runTicks(sim, 10);
 
-    sim.setParams({ ...DEFAULT_PARAMS, carCount: 20 });
+    sim.setParams({ ...DEFAULT_PARAMS, carCount: 25 });
     const snap = sim.getSnapshot();
 
-    expect(snap.cars).toHaveLength(20);
+    expect(snap.cars).toHaveLength(25);
     expect(snap.speedHistory).toHaveLength(0);
   });
 

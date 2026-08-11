@@ -14,7 +14,7 @@ export interface Car {
 }
 
 export interface SimParams {
-  carCount: number; // 15–60
+  carCount: number; // 10–30
   reactionTimeSeconds: number; // driver reaction/perception delay
   safeFollowingDistance: number; // metres; shifts the optimal-velocity curve
   trackLength: number; // metres, fixed
@@ -30,7 +30,7 @@ export interface SimParams {
 export type SimState = "stable" | "unstable" | "phantom-jam";
 
 export const DEFAULT_PARAMS: SimParams = {
-  carCount: 30,
+  carCount: 20,
   reactionTimeSeconds: 0.8,
   safeFollowingDistance: 15,
   trackLength: 1000,
@@ -82,6 +82,6 @@ export interface SliderRange {
 
 // The three params exposed as sliders; presets and UI controls are both
 // validated against these ranges.
-export const CAR_COUNT_RANGE: SliderRange = { min: 15, max: 60, step: 1 };
+export const CAR_COUNT_RANGE: SliderRange = { min: 10, max: 30, step: 1 };
 export const REACTION_TIME_RANGE: SliderRange = { min: 0.1, max: 2, step: 0.1 };
 export const FOLLOWING_DISTANCE_RANGE: SliderRange = { min: 5, max: 30, step: 1 };
