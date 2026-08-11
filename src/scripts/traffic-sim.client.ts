@@ -1,6 +1,7 @@
 import { drawSparkline } from "../lib/render/chart-canvas";
 import { drawRoad } from "../lib/render/road-canvas";
 import { computeDensity } from "../lib/sim/metrics";
+import { applyPreset, PRESETS } from "../lib/sim/presets";
 import { Simulation } from "../lib/sim/simulation";
 import { BRAKE_TAP_DURATION_SECONDS, DEFAULT_PARAMS } from "../lib/sim/types";
 import type { SimParams, SimState } from "../lib/sim/types";
@@ -49,6 +50,7 @@ export function initTrafficSim(): void {
   const waveStrengthEl = document.querySelector("#metric-wave-strength");
   const stateLabelEl = document.querySelector("#sim-state-label");
   const stateExplanationEl = document.querySelector("#sim-state-explanation");
+  const presetButtons = document.querySelectorAll<HTMLButtonElement>("[data-preset]");
 
   const roadCtxEl = roadCanvasEl?.getContext("2d");
   const chartCtxEl = chartCanvasEl?.getContext("2d");
@@ -64,6 +66,18 @@ export function initTrafficSim(): void {
   function updateParams(patch: Partial<SimParams>): void {
     params = { ...params, ...patch };
     sim.setParams(params);
+  }
+
+  function syncControlsToParams(): void {
+    if (carCountInput) carCountInput.value = String(params.carCount);
+    if (carCountOutput) carCountOutput.textContent = `${params.carCount} cars`;
+    canvas.setAttribute("aria-label", `Circular road with ${params.carCount} cars`);
+
+    if (reactionTimeInput) reactionTimeInput.value = String(params.reactionTimeSeconds);
+    if (reactionTimeOutput) reactionTimeOutput.textContent = `${params.reactionTimeSeconds.toFixed(1)} s`;
+
+    if (followingDistanceInput) followingDistanceInput.value = String(params.safeFollowingDistance);
+    if (followingDistanceOutput) followingDistanceOutput.textContent = `${params.safeFollowingDistance} m`;
   }
 
   resizeCanvasToDisplaySize(canvas, ctx);
@@ -95,6 +109,16 @@ export function initTrafficSim(): void {
   brakeButton?.addEventListener("click", () => {
     sim.brakeTap(BRAKE_TAP_CAR_ID, Math.round(BRAKE_TAP_DURATION_SECONDS / params.dt));
   });
+
+  for (const button of presetButtons) {
+    button.addEventListener("click", () => {
+      const preset = PRESETS.find((candidate) => candidate.id === button.dataset.preset);
+      if (!preset) return;
+      params = applyPreset(params, preset);
+      sim.setParams(params);
+      syncControlsToParams();
+    });
+  }
 
   let lastTimeMs: number | null = null;
   let accumulatorSeconds = 0;
