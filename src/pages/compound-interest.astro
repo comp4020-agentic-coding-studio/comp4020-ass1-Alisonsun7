@@ -1,0 +1,204 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const base = import.meta.env.BASE_URL;
+---
+
+<BaseLayout
+  title="The compound interest gap — five small explainers"
+  description="One slider showing why investing ten years earlier beats investing more money."
+  accent="blue"
+  activePath={`${base}compound-interest/`}
+>
+  <h1>Why ten years earlier beats saving more</h1>
+  <p class="lede">
+    Alex starts investing now. Jordan waits ten years, then starts putting
+    away the exact same amount every month. Drag the slider forward in time
+    and watch what that ten-year head start is actually worth.
+  </p>
+
+  <section class="panel" aria-label="Simulation">
+    <div class="controls">
+      <div class="control">
+        <label for="years-slider"
+          >Years elapsed <output id="years-output" for="years-slider">25</output></label
+        >
+        <input type="range" id="years-slider" min="0" max="35" step="1" value="25" />
+      </div>
+    </div>
+    <p class="assumption">
+      Both contribute $400 a month at an assumed 7% average annual return —
+      the only difference is when they start.
+    </p>
+
+    <div class="stat-row">
+      <div class="stat">
+        <span class="value" id="alex-value">—</span>
+        <span class="label">Alex — started at year 0</span>
+      </div>
+      <div class="stat">
+        <span class="value" id="jordan-value">—</span>
+        <span class="label">Jordan — started at year 10</span>
+      </div>
+    </div>
+
+    <div class="bars" aria-hidden="true">
+      <div class="bar-col">
+        <div class="bar-track"><div class="bar-fill bar-alex" id="alex-bar"></div></div>
+        <span class="bar-caption">Alex</span>
+      </div>
+      <div class="bar-col">
+        <div class="bar-track"><div class="bar-fill bar-jordan" id="jordan-bar"></div></div>
+        <span class="bar-caption">Jordan</span>
+      </div>
+    </div>
+
+    <svg class="growth-chart" viewBox="0 0 600 200" role="img" aria-labelledby="chart-title">
+      <title id="chart-title">Portfolio value over time for both investors</title>
+      <polyline id="jordan-line" class="line-jordan" points="" />
+      <polyline id="alex-line" class="line-alex" points="" />
+      <line id="year-marker" x1="0" y1="0" x2="0" y2="200" class="marker" />
+    </svg>
+    <p class="chart-legend">
+      <span class="swatch swatch-alex"></span>Alex &nbsp;&nbsp;<span class="swatch swatch-jordan"
+      ></span>Jordan
+    </p>
+
+    <p id="gap-readout" aria-live="polite"></p>
+  </section>
+
+  <section class="explainer">
+    <h2>Where the gap actually comes from</h2>
+    <p>
+      Every dollar you invest keeps earning returns on top of its previous
+      returns, so a contribution's value depends far more on how long it's
+      been compounding than on its size. Alex's first deposits have an extra
+      decade to snowball before Jordan even begins, and that decade sits at
+      the most valuable end of the timeline — compounding grows
+      multiplicatively, so the years right after money is deposited are
+      worth less than the years long after, when the balance itself is
+      large. By the time Jordan starts, some of Alex's early contributions
+      have already roughly doubled. Jordan can't buy that decade back at any
+      contribution size; even doubling or tripling the monthly amount closes
+      the gap only slowly, because the missing time was the most productive
+      part of the curve. This is the core case for starting small and early
+      over waiting to start big.
+    </p>
+  </section>
+</BaseLayout>
+
+<script>
+  import { initCompoundInterest } from "../scripts/compound-interest";
+  initCompoundInterest();
+</script>
+
+<style>
+  .assumption {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .bars {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    height: 14rem;
+    margin-block: 1.5rem;
+  }
+
+  .bar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 6rem;
+  }
+
+  .bar-track {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    background: #eef0f5;
+    border-radius: 0.4rem;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    width: 100%;
+    border-radius: 0.4rem 0.4rem 0 0;
+    transition: height 0.15s ease;
+  }
+
+  .bar-alex {
+    background: var(--accent);
+  }
+
+  .bar-jordan {
+    background: #9ca3af;
+  }
+
+  .bar-caption {
+    margin-top: 0.5rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .growth-chart {
+    width: 100%;
+    max-width: 40rem;
+    display: block;
+    margin-inline: auto;
+  }
+
+  .growth-chart polyline {
+    fill: none;
+    stroke-width: 3;
+  }
+
+  .line-alex {
+    stroke: var(--accent);
+  }
+
+  .line-jordan {
+    stroke: #9ca3af;
+  }
+
+  .marker {
+    stroke: var(--border);
+    stroke-width: 2;
+    stroke-dasharray: 4 4;
+  }
+
+  .chart-legend {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .swatch {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 2px;
+    margin-right: 0.3rem;
+  }
+
+  .swatch-alex {
+    background: var(--accent);
+  }
+
+  .swatch-jordan {
+    background: #9ca3af;
+  }
+
+  #gap-readout {
+    font-weight: 600;
+  }
+
+  @media (width <= 480px) {
+    .bars {
+      gap: 1.5rem;
+      height: 11rem;
+    }
+  }
+</style>
