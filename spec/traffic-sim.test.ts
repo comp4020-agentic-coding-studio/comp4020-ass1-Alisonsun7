@@ -8,6 +8,25 @@ import { describe, expect, it } from "vitest";
 // built page, not just described in prose.
 const doc = new JSDOM(readFileSync(resolve("dist/index.html"), "utf8")).window.document;
 
+describe("traffic simulator: page structure", () => {
+  const sectionHeadingIds = [
+    "braking-experiment-heading",
+    "scenarios-heading",
+    "free-experiment-heading",
+  ];
+
+  it("has a top-level section for each of the three learning-flow stages", () => {
+    for (const headingId of sectionHeadingIds) {
+      const section = doc.querySelector(`main > section[aria-labelledby="${headingId}"]`);
+      expect(section, `expected a <section aria-labelledby="${headingId}"> directly under <main>`).toBeTruthy();
+
+      const heading = doc.querySelector(`#${headingId}`);
+      expect(heading?.tagName, `#${headingId} should be the section's <h2>`).toBe("H2");
+      expect(section?.contains(heading ?? null)).toBe(true);
+    }
+  });
+});
+
 describe("traffic simulator: visuals", () => {
   it("gives the road canvas an accessible name", () => {
     const canvas = doc.querySelector("#road-canvas");
