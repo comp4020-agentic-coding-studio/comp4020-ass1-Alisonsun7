@@ -2,7 +2,6 @@ import { resizeCanvasToDisplaySize } from "../lib/render/canvas-utils";
 import { drawSparkline } from "../lib/render/chart-canvas";
 import { drawRoad } from "../lib/render/road-canvas";
 import { computeDensity } from "../lib/sim/metrics";
-import { applyPreset, PRESETS } from "../lib/sim/presets";
 import { Simulation } from "../lib/sim/simulation";
 import { BRAKE_TAP_DURATION_SECONDS, DEFAULT_PARAMS } from "../lib/sim/types";
 import type { SimParams, SimState } from "../lib/sim/types";
@@ -44,7 +43,6 @@ export function initTrafficSim(): void {
   const waveStrengthEl = document.querySelector("#metric-wave-strength");
   const stateLabelEl = document.querySelector("#sim-state-label");
   const stateExplanationEl = document.querySelector("#sim-state-explanation");
-  const presetButtons = document.querySelectorAll<HTMLButtonElement>("[data-preset]");
 
   const roadCtxEl = roadCanvasEl?.getContext("2d");
   const chartCtxEl = chartCanvasEl?.getContext("2d");
@@ -118,15 +116,6 @@ export function initTrafficSim(): void {
     speedToggleButton.textContent = `Speed: ${simSpeedMultiplier}×`;
     speedToggleButton.setAttribute("aria-label", `Simulation speed, currently ${simSpeedMultiplier}×`);
   });
-
-  for (const button of presetButtons) {
-    button.addEventListener("click", () => {
-      const preset = PRESETS.find((candidate) => candidate.id === button.dataset.preset);
-      if (!preset) return;
-      updateParams(applyPreset(params, preset));
-      syncControlsToParams();
-    });
-  }
 
   let lastTimeMs: number | null = null;
   let accumulatorSeconds = 0;

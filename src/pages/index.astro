@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import "../styles/simulation.css";
 import BrakingExperiment from "../components/BrakingExperiment.astro";
+import ScenarioShowcase from "../components/ScenarioShowcase.astro";
 import SimControls from "../components/SimControls.astro";
 import SimMetrics from "../components/SimMetrics.astro";
 import SimVisual from "../components/SimVisual.astro";
@@ -34,6 +35,8 @@ import SimVisual from "../components/SimVisual.astro";
 
       <BrakingExperiment />
 
+      <ScenarioShowcase />
+
       <div class="sim-layout">
         <SimVisual />
         <div class="sim-side">
@@ -46,6 +49,7 @@ import SimVisual from "../components/SimVisual.astro";
       import { CONVOY_TAP_DURATION_SECONDS } from "../lib/sim/convoy";
       import { DEFAULT_PARAMS } from "../lib/sim/types";
       import { initConvoyExperiment } from "../scripts/convoy-experiment.client";
+      import { initScenarioShowcase } from "../scripts/scenario-showcase.client";
       import { initTrafficSim } from "../scripts/traffic-sim.client";
 
       initConvoyExperiment({
@@ -55,6 +59,8 @@ import SimVisual from "../components/SimVisual.astro";
         params: { ...DEFAULT_PARAMS, safeFollowingDistance: 20 },
         tapDurationSeconds: CONVOY_TAP_DURATION_SECONDS,
       });
+
+      initScenarioShowcase();
 
       initTrafficSim();
     </script>

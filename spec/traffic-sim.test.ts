@@ -22,6 +22,32 @@ describe("traffic simulator: visuals", () => {
   });
 });
 
+describe("traffic simulator: braking experiment", () => {
+  it("gives the experiment canvas an accessible name", () => {
+    const canvas = doc.querySelector("#experiment-canvas");
+    expect(canvas?.getAttribute("role")).toBe("img");
+    expect(canvas?.getAttribute("aria-label")?.trim()).not.toBe("");
+  });
+
+  it("has a tap-the-brakes button", () => {
+    const button = doc.querySelector("#experiment-tap-button");
+    expect(button?.tagName).toBe("BUTTON");
+  });
+});
+
+describe("traffic simulator: scenarios", () => {
+  it("has a scenario button for every named case study", () => {
+    const scenarioButtons = doc.querySelectorAll("[data-scenario]");
+    expect(scenarioButtons.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("gives the scenario canvas an accessible name", () => {
+    const canvas = doc.querySelector("#scenario-canvas");
+    expect(canvas?.getAttribute("role")).toBe("img");
+    expect(canvas?.getAttribute("aria-label")?.trim()).not.toBe("");
+  });
+});
+
 describe("traffic simulator: controls", () => {
   const sliders: Array<{ id: string; min: string; max: string }> = [
     { id: "car-count-input", min: "10", max: "30" },
@@ -53,11 +79,6 @@ describe("traffic simulator: controls", () => {
     const button = doc.querySelector("#speed-toggle-button");
     expect(button?.tagName).toBe("BUTTON");
     expect(button?.getAttribute("aria-label")?.trim()).not.toBe("");
-  });
-
-  it("has a preset button for every named scenario", () => {
-    const presetButtons = doc.querySelectorAll("[data-preset]");
-    expect(presetButtons.length).toBeGreaterThanOrEqual(3);
   });
 });
 

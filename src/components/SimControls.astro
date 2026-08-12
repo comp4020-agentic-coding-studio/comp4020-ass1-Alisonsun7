@@ -1,25 +1,7 @@
 ---
-import { PRESETS } from "../lib/sim/presets";
 ---
 
 <section class="sim-controls" aria-label="Simulation controls">
-  <fieldset class="presets">
-    <legend>Scenarios</legend>
-    {
-      PRESETS.map((preset) => (
-        <button
-          type="button"
-          class="preset-button"
-          data-preset={preset.id}
-          title={preset.description}
-          aria-label={`${preset.label}: ${preset.description}`}
-        >
-          {preset.label}
-        </button>
-      ))
-    }
-  </fieldset>
-
   <div class="slider-group">
     <label for="car-count-input">Number of cars</label>
     <input

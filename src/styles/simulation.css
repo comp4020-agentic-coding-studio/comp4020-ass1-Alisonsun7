@@ -17,6 +17,52 @@
   border-radius: 0.5rem;
 }
 
+.scenario-showcase {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-block-end: 2.5rem;
+}
+
+.scenario-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.scenario-button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #0b5fff;
+  border-radius: 999px;
+  background: #fff;
+  color: #0b5fff;
+  cursor: pointer;
+}
+
+.scenario-button:hover {
+  background: #eef4ff;
+}
+
+.scenario-button[aria-pressed="true"] {
+  background: #0b5fff;
+  color: #fff;
+}
+
+.scenario-narrative {
+  display: grid;
+  gap: 0.25rem 1rem;
+  margin: 0;
+}
+
+.scenario-narrative dt {
+  font-weight: 600;
+}
+
+.scenario-narrative dd {
+  margin: 0 0 0.75rem;
+  color: #4b4b4b;
+}
+
 .sim-layout {
   display: flex;
   flex-direction: column;
@@ -62,33 +108,6 @@
   padding: 1rem;
   border: 1px solid #d8d8d8;
   border-radius: 0.5rem;
-}
-
-.presets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0;
-  border: none;
-}
-
-.presets legend {
-  width: 100%;
-  padding: 0 0 0.5rem;
-  font-weight: 600;
-}
-
-.preset-button {
-  padding: 0.4rem 0.8rem;
-  border: 1px solid #0b5fff;
-  border-radius: 999px;
-  background: #fff;
-  color: #0b5fff;
-  cursor: pointer;
-}
-
-.preset-button:hover {
-  background: #eef4ff;
 }
 
 .slider-group {
