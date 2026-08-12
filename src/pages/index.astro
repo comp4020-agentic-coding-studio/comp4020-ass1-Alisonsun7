@@ -1,11 +1,5 @@
 ---
 import "../styles/global.css";
-import "../styles/simulation.css";
-import BrakingExperiment from "../components/BrakingExperiment.astro";
-import ScenarioShowcase from "../components/ScenarioShowcase.astro";
-import SimControls from "../components/SimControls.astro";
-import SimMetrics from "../components/SimMetrics.astro";
-import SimVisual from "../components/SimVisual.astro";
 ---
 
 <!doctype html>
@@ -13,11 +7,7 @@ import SimVisual from "../components/SimVisual.astro";
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="An interactive simulation showing how a phantom traffic jam forms from density, following distance, and driver reaction time alone — no accident or red light required."
-    />
-    <title>Phantom traffic jams — COMP4020 prototype</title>
+    <title>COMP4020/8020 assignment 1</title>
   </head>
   <body>
     <header>
@@ -26,54 +16,8 @@ import SimVisual from "../components/SimVisual.astro";
       </nav>
     </header>
     <main>
-      <h1>Why does traffic jam for no reason?</h1>
-      <p class="lede">
-        No accident. No red light. No lane closure. Just enough cars, following a little too
-        closely, reacting a little too slowly — and a single tap on the brakes turns into a wave
-        that outlives whatever caused it.
-      </p>
-
-      <BrakingExperiment />
-
-      <ScenarioShowcase />
-
-      <section aria-labelledby="free-experiment-heading" class="free-experiment">
-        <h2 id="free-experiment-heading">Experiment freely</h2>
-        <p>
-          Same physics, now in your hands. This is a full loop of traffic rather than a single
-          line, so a wave that grows enough can chase its own tail and sustain itself indefinitely
-          instead of running out of cars to disturb. Drag the sliders to change how many cars are
-          sharing the road, how quickly drivers react, and how much following distance they leave
-          — then tap the brakes and watch whether the disturbance dies out, lingers, or turns into
-          a phantom jam that never needs a first cause again.
-        </p>
-        <div class="sim-layout">
-          <SimVisual />
-          <div class="sim-side">
-            <SimControls />
-            <SimMetrics />
-          </div>
-        </div>
-      </section>
+      <h1>Starting from scratch</h1>
+      <p>Placeholder page — replace with the real assignment content.</p>
     </main>
-    <script>
-      import { CONVOY_TAP_DURATION_SECONDS } from "../lib/sim/convoy";
-      import { DEFAULT_PARAMS } from "../lib/sim/types";
-      import { initConvoyExperiment } from "../scripts/convoy-experiment.client";
-      import { initScenarioShowcase } from "../scripts/scenario-showcase.client";
-      import { initTrafficSim } from "../scripts/traffic-sim.client";
-
-      initConvoyExperiment({
-        canvasSelector: "#experiment-canvas",
-        buttonSelector: "#experiment-tap-button",
-        carCount: 20,
-        params: { ...DEFAULT_PARAMS, safeFollowingDistance: 20 },
-        tapDurationSeconds: CONVOY_TAP_DURATION_SECONDS,
-      });
-
-      initScenarioShowcase();
-
-      initTrafficSim();
-    </script>
   </body>
 </html>
