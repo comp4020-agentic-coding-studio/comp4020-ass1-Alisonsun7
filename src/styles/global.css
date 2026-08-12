@@ -1,22 +1,260 @@
+:root {
+  --bg: #f6f6fb;
+  --surface: #fff;
+  --fg: #16171d;
+  --muted: #5b5f6b;
+  --border: #e1e3ea;
+  --radius: 0.75rem;
+  --space-2: 0.5rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2.5rem;
+  --accent: #0b5fff;
+  --accent-fg: #fff;
+  --focus: #0b5fff;
+}
+
+body[data-accent="blue"] {
+  --accent: #0b5fff;
+}
+
+body[data-accent="violet"] {
+  --accent: #7c3aed;
+}
+
+body[data-accent="green"] {
+  --accent: #0f9d58;
+}
+
+body[data-accent="amber"] {
+  --accent: #b5750a;
+}
+
+body[data-accent="rose"] {
+  --accent: #d1315e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  padding: 2rem;
   font-family: system-ui, sans-serif;
   line-height: 1.6;
-  color: #1a1a1a;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+a {
+  color: var(--accent);
+}
+
+a:visited {
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.site-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.site-header nav {
+  max-width: min(75rem, 96vw);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+}
+
+.site-header .brand {
+  font-weight: 700;
+  color: var(--fg);
+  text-decoration: none;
+  margin-right: auto;
+}
+
+.site-header ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+}
+
+.site-header a {
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.site-header a:visited {
+  color: var(--muted);
+}
+
+.site-header a[aria-current="page"] {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 main {
   max-width: min(75rem, 96vw);
   margin: 0 auto;
+  padding: var(--space-5) var(--space-4);
 }
 
-a {
-  color: #0b5fff;
+.site-footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: var(--space-4);
+}
+
+h1 {
+  font-size: clamp(1.75rem, 1.3rem + 1.8vw, 2.5rem);
+  margin-bottom: var(--space-2);
+}
+
+.lede {
+  color: var(--muted);
+  font-size: 1.1rem;
+  max-width: 46rem;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  margin-block: var(--space-4);
+}
+
+.explainer {
+  max-width: 42rem;
+}
+
+.explainer p {
+  color: var(--muted);
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.control label {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.control output {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.btn {
+  font: inherit;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  border-radius: 999px;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-block: var(--space-3);
+}
+
+.stat {
+  min-width: 8rem;
+}
+
+.stat .value {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.stat .label {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  text-decoration: none;
+  color: var(--fg);
+}
+
+.card:visited {
+  color: var(--fg);
+}
+
+.card:hover {
+  border-color: var(--card-accent, var(--accent));
+}
+
+.card h2 {
+  margin-top: 0;
+  color: var(--card-accent, var(--accent));
+}
+
+.card p {
+  color: var(--muted);
+  margin-bottom: 0;
 }
 
 @media (width <= 480px) {
-  body {
-    padding: 1rem;
+  main {
+    padding: var(--space-4) var(--space-3);
   }
 }

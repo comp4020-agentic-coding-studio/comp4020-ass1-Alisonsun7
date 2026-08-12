@@ -1,0 +1,59 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+  accent?: "blue" | "violet" | "green" | "amber" | "rose";
+  activePath?: string;
+}
+
+const { title, description, accent = "blue", activePath } = Astro.props;
+const base = import.meta.env.BASE_URL;
+
+const links = [
+  { href: base, label: "Home" },
+  { href: `${base}compound-interest/`, label: "Compound interest" },
+  { href: `${base}byte-scale/`, label: "How big is a byte" },
+  { href: `${base}tragedy-of-the-commons/`, label: "Tragedy of the commons" },
+  { href: `${base}epidemic-threshold/`, label: "Epidemic threshold" },
+  { href: `${base}monty-hall/`, label: "Monty Hall" },
+];
+---
+
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+  </head>
+  <body data-accent={accent}>
+    <header class="site-header">
+      <nav aria-label="Primary">
+        <a class="brand" href={base}>Five small explainers</a>
+        <ul>
+          {
+            links.map((link) => (
+              <li>
+                <a
+                  href={link.href}
+                  aria-current={activePath === link.href ? "page" : undefined}
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <p>COMP4020/8020 Assignment 1 — five interactive prototypes, built to pick one.</p>
+    </footer>
+  </body>
+</html>

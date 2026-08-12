@@ -1,23 +1,61 @@
 ---
-import "../styles/global.css";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const base = import.meta.env.BASE_URL;
+
+const explainers = [
+  {
+    href: `${base}compound-interest/`,
+    accent: "#0b5fff",
+    title: "The compound interest gap",
+    hook: "Why starting ten years earlier beats saving more money.",
+  },
+  {
+    href: `${base}byte-scale/`,
+    accent: "#7c3aed",
+    title: "How big is a byte, really",
+    hook: "Click through the ladder from a single letter to all of Wikipedia.",
+  },
+  {
+    href: `${base}tragedy-of-the-commons/`,
+    accent: "#0f9d58",
+    title: "Tragedy of the commons",
+    hook: "Everyone fishing rationally can still empty the lake.",
+  },
+  {
+    href: `${base}epidemic-threshold/`,
+    accent: "#b5750a",
+    title: "The epidemic threshold",
+    hook: "One number decides whether an outbreak fizzles or explodes.",
+  },
+  {
+    href: `${base}monty-hall/`,
+    accent: "#d1315e",
+    title: "Monty Hall, twenty times",
+    hook: "Your gut says 50/50. Play it out and watch the real odds.",
+  },
+];
 ---
 
-<!doctype html>
-<html lang="en-AU">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>COMP4020/8020 assignment 1</title>
-  </head>
-  <body>
-    <header>
-      <nav aria-label="Primary">
-        <a href={import.meta.env.BASE_URL}>Home</a>
-      </nav>
-    </header>
-    <main>
-      <h1>Starting from scratch</h1>
-      <p>Placeholder page — replace with the real assignment content.</p>
-    </main>
-  </body>
-</html>
+<BaseLayout
+  title="Five small explainers — COMP4020/8020 Assignment 1"
+  description="Five short interactive explainers built while choosing which one becomes the final assignment."
+  activePath={base}
+>
+  <h1>Five things that don't feel true until you play with them</h1>
+  <p class="lede">
+    Five short interactive prototypes, each built around one number or one
+    mechanic that behaves differently from what intuition predicts. Pick one
+    to explore.
+  </p>
+  <div class="card-grid">
+    {
+      explainers.map((item) => (
+        <a class="card" href={item.href} style={`--card-accent: ${item.accent}`}>
+          <h2>{item.title}</h2>
+          <p>{item.hook}</p>
+        </a>
+      ))
+    }
+  </div>
+</BaseLayout>
