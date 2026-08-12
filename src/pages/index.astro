@@ -37,13 +37,24 @@ import SimVisual from "../components/SimVisual.astro";
 
       <ScenarioShowcase />
 
-      <div class="sim-layout">
-        <SimVisual />
-        <div class="sim-side">
-          <SimControls />
-          <SimMetrics />
+      <section aria-labelledby="free-experiment-heading" class="free-experiment">
+        <h2 id="free-experiment-heading">Experiment freely</h2>
+        <p>
+          Same physics, now in your hands. This is a full loop of traffic rather than a single
+          line, so a wave that grows enough can chase its own tail and sustain itself indefinitely
+          instead of running out of cars to disturb. Drag the sliders to change how many cars are
+          sharing the road, how quickly drivers react, and how much following distance they leave
+          — then tap the brakes and watch whether the disturbance dies out, lingers, or turns into
+          a phantom jam that never needs a first cause again.
+        </p>
+        <div class="sim-layout">
+          <SimVisual />
+          <div class="sim-side">
+            <SimControls />
+            <SimMetrics />
+          </div>
         </div>
-      </div>
+      </section>
     </main>
     <script>
       import { CONVOY_TAP_DURATION_SECONDS } from "../lib/sim/convoy";

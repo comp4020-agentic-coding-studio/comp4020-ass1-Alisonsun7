@@ -63,6 +63,12 @@
   color: #4b4b4b;
 }
 
+.free-experiment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .sim-layout {
   display: flex;
   flex-direction: column;
