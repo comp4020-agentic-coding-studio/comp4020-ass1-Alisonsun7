@@ -253,6 +253,10 @@ input[type="range"] {
   margin-bottom: 0;
 }
 
+[hidden] {
+  display: none;
+}
+
 @media (width <= 480px) {
   main {
     padding: var(--space-4) var(--space-3);

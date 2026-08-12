@@ -1,0 +1,119 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const base = import.meta.env.BASE_URL;
+---
+
+<BaseLayout
+  title="Monty Hall, twenty times — five small explainers"
+  description="Play the Monty Hall problem and watch whether staying or switching actually wins more often."
+  accent="rose"
+  activePath={`${base}monty-hall/`}
+>
+  <h1>Monty Hall, twenty times</h1>
+  <p class="lede">
+    Pick a door. The host — who knows where the car is — always opens one of
+    the other two to show a goat. Then you get to stay with your door or
+    switch to the last one. Most people's gut says it's 50/50 either way.
+    Play it out and watch the real numbers.
+  </p>
+
+  <section class="panel" aria-label="Play">
+    <div class="doors" role="group" aria-label="Three doors">
+      <button class="door" id="door-0" type="button">Door 1</button>
+      <button class="door" id="door-1" type="button">Door 2</button>
+      <button class="door" id="door-2" type="button">Door 3</button>
+    </div>
+    <p id="round-status" aria-live="polite">Pick a door to begin.</p>
+    <div class="btn-row" id="decision-buttons" hidden>
+      <button class="btn btn-primary" id="stay-btn" type="button">Stay</button>
+      <button class="btn btn-primary" id="switch-btn" type="button">Switch</button>
+    </div>
+    <div class="btn-row" id="next-round-row" hidden>
+      <button class="btn" id="new-round-btn" type="button">Play again</button>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Session results">
+    <h2>Across every round you've played</h2>
+    <div class="stat-row">
+      <div class="stat">
+        <span class="value" id="stay-rate">—</span>
+        <span class="label" id="stay-total">Stayed 0 times</span>
+      </div>
+      <div class="stat">
+        <span class="value" id="switch-rate">—</span>
+        <span class="label" id="switch-total">Switched 0 times</span>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="autoplay-switch" type="button">Simulate 20 rounds, always switching</button>
+      <button class="btn" id="autoplay-stay" type="button">Simulate 20 rounds, always staying</button>
+    </div>
+    <p id="autoplay-status" aria-live="polite"></p>
+  </section>
+
+  <section class="explainer">
+    <h2>Why switching wins twice as often</h2>
+    <p>
+      When you first choose a door, there's a 1-in-3 chance it hides the car
+      and a 2-in-3 chance the car is behind one of the other two. The host's
+      reveal doesn't change those odds retroactively — they're not opening a
+      random door, they're deliberately avoiding both your door and the car,
+      which means the goat they show you carries information. All of that
+      original 2-in-3 chance is now concentrated on the single door you
+      didn't pick and the host didn't open. Switching lets you cash in that
+      probability; staying throws it away. Play a few rounds — or run the
+      simulator — and the win rates settle exactly where the maths predicts:
+      about 33% for staying, about 67% for switching.
+    </p>
+  </section>
+</BaseLayout>
+
+<script>
+  import { initMontyHall } from "../scripts/monty-hall";
+  initMontyHall();
+</script>
+
+<style>
+  .doors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .door {
+    flex: 1 1 8rem;
+    min-height: 6rem;
+    font: inherit;
+    font-size: 1.1rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    cursor: pointer;
+  }
+
+  .door:hover:not(:disabled) {
+    border-color: var(--accent);
+  }
+
+  .door:disabled {
+    cursor: default;
+  }
+
+  .door[data-state="goat"] {
+    border-color: var(--muted);
+    background: #f0f0f4;
+  }
+
+  .door[data-state="car-win"] {
+    border-color: #0f9d58;
+    background: #e8f7ef;
+  }
+
+  .door[data-state="car-lost"] {
+    border-color: var(--muted);
+    background: #f0f0f4;
+  }
+</style>
