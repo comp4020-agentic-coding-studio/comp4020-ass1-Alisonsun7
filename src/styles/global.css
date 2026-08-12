@@ -7,10 +7,16 @@ body {
 }
 
 main {
-  max-width: 40rem;
+  max-width: min(75rem, 96vw);
   margin: 0 auto;
 }
 
 a {
   color: #0b5fff;
+}
+
+@media (width <= 480px) {
+  body {
+    padding: 1rem;
+  }
 }

@@ -188,6 +188,12 @@
   border-radius: 0.5rem;
 }
 
+@media (width <= 480px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (width >= 900px) {
   .sim-layout {
     flex-direction: row;
