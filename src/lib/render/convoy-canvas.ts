@@ -17,17 +17,43 @@ const CAR_COLORS: Record<CarColor, string> = {
   red: "#dc2626",
 };
 
-// Metres-to-pixels scale for the convoy line. Fixed (not fit-to-canvas) so a
-// car's on-screen size and spacing stay stable as the convoy plays out —
-// only the camera pans, per drawConvoy's centroid recenter below.
-const PIXELS_PER_METRE = 2.6;
+// Margin (metres) left empty on each side of the convoy so cars at the very
+// front/back don't render flush against the canvas edge.
+const CAMERA_PADDING_METRES = 15;
+
+// A floor on the metres considered "on screen", so a near-empty or
+// single-car convoy doesn't zoom in absurdly far.
+const MIN_VISIBLE_SPAN_METRES = 40;
+
+// A floor on car marker radius, in pixels. The convoy's realistic cruising
+// gap (tens of metres, so the leader settles near vMax before any tap) means
+// fitting the whole convoy into view yields only ~1-1.5 px/metre — drawing
+// cars at their true physical size at that scale renders them as
+// near-invisible 5-6px dots, which hides exactly the colour change the demo
+// is trying to show. The gap between cars is wide enough at that scale
+// (tens of pixels) that a larger fixed floor doesn't risk overlap.
+const MIN_CAR_RADIUS_PX = 8;
+
+// Horizontal margin (pixels) kept clear at each canvas edge for label text,
+// separate from CAMERA_PADDING_METRES (which reserves space for the car
+// marker itself). The frontmost car — typically the leader, where the brake
+// tap happens — sits close to the right edge under the fit-to-span camera,
+// so a centred label above it would otherwise render half off-canvas.
+const LABEL_EDGE_MARGIN_PX = 4;
 
 // Draws a single straight line of cars, front (highest position) to the
-// right, back (most negative position) to the left, camera-following the
-// convoy's centroid so it never drifts off-canvas regardless of how long the
-// leader has been free-running. Not unit-tested — canvas has no
-// representation in this repo's Node/JSDOM test environment — so this is
-// verified visually instead.
+// right, back (most negative position) to the left. The camera fits the
+// whole convoy — from its current backmost car to its current frontmost car
+// — into the canvas width every frame, rather than holding a fixed
+// metres-to-pixels scale centred on the centroid: the cruising gap between
+// cars is deliberately large (tens of metres, so the optimal-velocity curve
+// settles near vMax), which made a fixed scale zoom in far enough that the
+// leader — where the brake tap happens — and the followers reacting to it
+// rendered well outside the canvas while only unaffected middle-of-the-pack
+// cars were ever visible. Fitting the full convoy keeps the tap and the
+// backward-propagating wave in view for the whole demo. Not unit-tested —
+// canvas has no representation in this repo's Node/JSDOM test environment —
+// so this is verified visually instead.
 export function drawConvoy(
   ctx: CanvasRenderingContext2D,
   cars: readonly Car[],
@@ -40,8 +66,13 @@ export function drawConvoy(
   if (cars.length === 0) return;
 
   const roadY = height / 2;
-  const centroid = cars.reduce((sum, car) => sum + car.position, 0) / cars.length;
-  const toScreenX = (position: number): number => width / 2 + (position - centroid) * PIXELS_PER_METRE;
+  const positions = cars.map((car) => car.position);
+  const minPosition = Math.min(...positions);
+  const maxPosition = Math.max(...positions);
+  const spanMetres = Math.max(maxPosition - minPosition, MIN_VISIBLE_SPAN_METRES) + CAMERA_PADDING_METRES * 2;
+  const pixelsPerMetre = width / spanMetres;
+  const toScreenX = (position: number): number =>
+    (position - minPosition + CAMERA_PADDING_METRES) * pixelsPerMetre;
 
   ctx.strokeStyle = ROAD_COLOR;
   ctx.lineWidth = ROAD_WIDTH_PX;
@@ -59,7 +90,7 @@ export function drawConvoy(
   ctx.stroke();
   ctx.setLineDash([]);
 
-  const carRadius = Math.max(3, (params.carLength / 2) * PIXELS_PER_METRE);
+  const carRadius = Math.max(MIN_CAR_RADIUS_PX, (params.carLength / 2) * pixelsPerMetre);
 
   for (const car of cars) {
     const x = toScreenX(car.position);
@@ -86,7 +117,12 @@ export function drawConvoy(
   for (const label of labels) {
     const car = cars.find((candidate) => candidate.id === label.carId);
     if (!car) continue;
-    const x = toScreenX(car.position);
+    const carX = toScreenX(car.position);
+    const halfTextWidth = ctx.measureText(label.text).width / 2;
+    const x = Math.min(
+      Math.max(carX, LABEL_EDGE_MARGIN_PX + halfTextWidth),
+      width - LABEL_EDGE_MARGIN_PX - halfTextWidth,
+    );
     ctx.fillText(label.text, x, roadY - carRadius - 10);
   }
 }
