@@ -40,15 +40,17 @@ export function computeGap(
   return raw - carLength;
 }
 
-function mod(n: number, m: number): number {
+export function mod(n: number, m: number): number {
   return ((n % m) + m) % m;
 }
 
 // The stale sample a driver actually reacts to: this tick's real gap/velocity
 // were just written at `latestIndex`; `ticksBack` steps back from there is the
 // genuine phase delay behind "reaction time" — the mechanism that lets a
-// disturbance amplify rather than merely arrive late.
-function readDelayedSample(
+// disturbance amplify rather than merely arrive late. Exported so the linear
+// convoy model (`convoy.ts`) can reuse the exact same delayed-reaction
+// mechanism instead of reimplementing it.
+export function readDelayedSample(
   history: readonly HistorySample[],
   latestIndex: number,
   ticksBack: number,
