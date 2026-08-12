@@ -1,0 +1,153 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const base = import.meta.env.BASE_URL;
+---
+
+<BaseLayout
+  title="The epidemic threshold — five small explainers"
+  description="One slider showing how a disease flips from fizzling out to a full outbreak around a threshold contact rate."
+  accent="amber"
+  activePath={`${base}epidemic-threshold/`}
+>
+  <h1>Why one extra contact can flip fizzle into outbreak</h1>
+  <p class="lede">
+    The same disease, spreading on the same network of people, with the same
+    one starting case. The only thing the slider changes is how many people
+    each infected person passes it to on average. Watch how little that
+    number has to move before the outcome flips completely.
+  </p>
+
+  <section class="panel" aria-label="Simulation">
+    <div class="controls">
+      <div class="control">
+        <label for="contact-slider"
+          >Contact rate (≈ R₀) <output id="contact-output" for="contact-slider">1.0</output
+          ></label
+        >
+        <input type="range" id="contact-slider" min="0.5" max="4" step="0.1" value="1.0" />
+      </div>
+    </div>
+    <p class="assumption">
+      120 people, one starts infected, each stays infectious for 4 ticks
+      before recovering. The network layout and the coin flips behind every
+      run are fixed — only the slider changes.
+    </p>
+
+    <svg
+      class="network"
+      viewBox="0 0 600 400"
+      role="img"
+      aria-labelledby="network-title"
+    >
+      <title id="network-title">Network of people, coloured by infection status</title>
+      <g id="network-edges"></g>
+      <g id="network-nodes"></g>
+    </svg>
+    <p class="network-legend">
+      <span class="swatch swatch-s"></span>Susceptible &nbsp;&nbsp;<span
+        class="swatch swatch-i"
+      ></span>Infected &nbsp;&nbsp;<span class="swatch swatch-r"></span>Recovered
+    </p>
+
+    <svg class="growth-chart" viewBox="0 0 600 200" role="img" aria-labelledby="et-chart-title">
+      <title id="et-chart-title">Number of people currently infected, over time</title>
+      <polyline id="infected-line" class="line-infected" points="" />
+    </svg>
+
+    <p id="tick-status" aria-live="polite"></p>
+    <p id="outcome-readout" class="outcome" aria-live="polite"></p>
+  </section>
+
+  <section class="explainer">
+    <h2>Why there's a threshold at all</h2>
+    <p>
+      Every infected person recovers after a fixed number of ticks, so
+      whether the disease grows or dies out depends entirely on whether each
+      infected person manages to pass it on to more or less than one other
+      person, on average, before they recover. That's what the slider
+      controls. Below the threshold, each chain of infection is shorter than
+      the last and the outbreak sputters out after a handful of cases —
+      exactly what would happen if you tried to start a chain letter that
+      each person only forwarded to less than one friend. Above it, each
+      case produces more than one new case, and that compounding is
+      explosive: in this network the flip happens narrowly, around a
+      contact rate of 1.6–1.7, not at exactly 1.0, because chance and the
+      shape of the network both matter at this size. Textbook epidemiology
+      calls that dividing line <strong>R₀ = 1</strong>, and it's the whole
+      reason public health measures target contact rate rather than trying
+      to treat every case after the fact.
+    </p>
+  </section>
+</BaseLayout>
+
+<script>
+  import { initEpidemicThreshold } from "../scripts/epidemic-threshold";
+  initEpidemicThreshold();
+</script>
+
+<style>
+  .network {
+    width: 100%;
+    max-width: 40rem;
+    display: block;
+    margin-inline: auto;
+    background: #fafafa;
+    border-radius: 0.5rem;
+  }
+
+  .network :global(.edge) {
+    stroke: #d8dbe2;
+    stroke-width: 1;
+  }
+
+  .network :global(.node) {
+    stroke: #fff;
+    stroke-width: 1;
+  }
+
+  .network :global(.node-s) {
+    fill: #9ca3af;
+  }
+
+  .network :global(.node-i) {
+    fill: #dc2626;
+  }
+
+  .network :global(.node-r) {
+    fill: #2563eb;
+  }
+
+  .network-legend {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .swatch-s {
+    background: #9ca3af;
+  }
+
+  .swatch-i {
+    background: #dc2626;
+  }
+
+  .swatch-r {
+    background: #2563eb;
+  }
+
+  .line-infected {
+    stroke: var(--accent);
+  }
+
+  #tick-status {
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .outcome {
+    font-weight: 600;
+    text-align: center;
+    min-height: 1.6rem;
+  }
+</style>
