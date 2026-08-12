@@ -1,3 +1,4 @@
+import { resizeCanvasToDisplaySize } from "../lib/render/canvas-utils";
 import { drawSparkline } from "../lib/render/chart-canvas";
 import { drawRoad } from "../lib/render/road-canvas";
 import { computeDensity } from "../lib/sim/metrics";
@@ -26,15 +27,6 @@ const STATE_COPY: Record<SimState, { label: string; explanation: string }> = {
 
 const BRAKE_TAP_CAR_ID = 0;
 const SPEED_MULTIPLIERS = [1, 2, 4] as const;
-
-function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): void {
-  const dpr = window.devicePixelRatio || 1;
-  const width = canvas.clientWidth;
-  const height = canvas.clientHeight;
-  canvas.width = Math.round(width * dpr);
-  canvas.height = Math.round(height * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
 
 export function initTrafficSim(): void {
   const roadCanvasEl = document.querySelector<HTMLCanvasElement>("#road-canvas");

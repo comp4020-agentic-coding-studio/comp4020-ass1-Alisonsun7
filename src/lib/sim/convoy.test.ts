@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { applyBrakeTap } from "./model";
 import {
   CONVOY_BRAKE_TAP_VELOCITY_FRACTION,
+  CONVOY_TAP_DURATION_SECONDS,
   ConvoyExperiment,
   computeLinearGap,
   createConvoyCars,
@@ -75,7 +76,11 @@ describe("stepConvoy — causal chain", () => {
       reactionTimeSeconds: 0.8,
       safeFollowingDistance: 20,
     };
-    let cars = applyBrakeTap(createConvoyCars(params.carCount, params), 0, Math.round(0.2 / params.dt));
+    let cars = applyBrakeTap(
+      createConvoyCars(params.carCount, params),
+      0,
+      Math.round(CONVOY_TAP_DURATION_SECONDS / params.dt),
+    );
 
     // Peak per-tick deceleration is noisy here: the shared MIN_GAP_METRES
     // floor can snap a car's speed down in a single "emergency stop" tick,
@@ -129,7 +134,7 @@ describe("ConvoyExperiment", () => {
       safeFollowingDistance: 20,
     };
     const experiment = new ConvoyExperiment(params.carCount, params);
-    experiment.brakeTap(Math.round(0.2 / params.dt));
+    experiment.brakeTap(Math.round(CONVOY_TAP_DURATION_SECONDS / params.dt));
 
     for (let tick = 0; tick < 600; tick++) experiment.step();
 

@@ -22,6 +22,13 @@ const LEADER_VIRTUAL_GAP = 1e6;
 // into "everyone just stops".
 export const CONVOY_BRAKE_TAP_VELOCITY_FRACTION = 0.4;
 
+// A brief tap, not a hold: long enough to visibly touch off the chain,
+// short enough to read as "one small braking action" rather than the leader
+// simply driving slowly. Paired with CONVOY_BRAKE_TAP_VELOCITY_FRACTION and
+// a reactionTimeSeconds/safeFollowingDistance of 0.8/20 during tuning — see
+// convoy.test.ts's causal-chain test for the empirical basis.
+export const CONVOY_TAP_DURATION_SECONDS = 0.2;
+
 // How far behind cruising speed a car must fall before it counts as having
 // noticed the disturbance at all — filters out floating-point noise.
 const NOTICE_VELOCITY_DROP_METRES_PER_SECOND = 0.3;
