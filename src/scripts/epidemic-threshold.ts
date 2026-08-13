@@ -4,7 +4,7 @@ const NODE_COUNT = 120;
 const WIDTH = 600;
 const HEIGHT = 400;
 const MARGIN = 25;
-const RADIUS = 60;
+const DEFAULT_RADIUS = 60;
 const INFECTIOUS_DURATION = 4;
 const MAX_TICKS = 40;
 const LAYOUT_SEED = 1234;
@@ -59,16 +59,54 @@ function buildAdjacency(positions: Point[], radius: number): number[][] {
   return adjacency;
 }
 
+function computeAvgDegree(adjacency: number[][]): number {
+  return adjacency.reduce((sum, edges) => sum + edges.length, 0) / NODE_COUNT;
+}
+
+interface ComponentInfo {
+  count: number;
+  giant: number;
+}
+
+function countComponents(adjacency: number[][]): ComponentInfo {
+  const seen = Array.from({ length: NODE_COUNT }, () => false);
+  let count = 0;
+  let giant = 0;
+  for (let start = 0; start < NODE_COUNT; start += 1) {
+    if (seen[start]) continue;
+    count += 1;
+    let size = 0;
+    const stack = [start];
+    seen[start] = true;
+    while (stack.length > 0) {
+      const node = stack.pop() as number;
+      size += 1;
+      for (const neighbour of adjacency[node]) {
+        if (!seen[neighbour]) {
+          seen[neighbour] = true;
+          stack.push(neighbour);
+        }
+      }
+    }
+    if (size > giant) giant = size;
+  }
+  return { count, giant };
+}
+
 const positions = buildLayout(LAYOUT_SEED);
-const adjacency = buildAdjacency(positions, RADIUS);
-const avgDegree = adjacency.reduce((sum, edges) => sum + edges.length, 0) / NODE_COUNT;
-const patientZero = adjacency.reduce(
+const initialAdjacency = buildAdjacency(positions, DEFAULT_RADIUS);
+const initialAvgDegree = computeAvgDegree(initialAdjacency);
+const patientZero = initialAdjacency.reduce(
   (best, edges, index) =>
-    Math.abs(edges.length - avgDegree) < Math.abs(adjacency[best].length - avgDegree)
+    Math.abs(edges.length - initialAvgDegree) < Math.abs(initialAdjacency[best].length - initialAvgDegree)
       ? index
       : best,
   0,
 );
+
+let adjacency = initialAdjacency;
+let avgDegree = initialAvgDegree;
+let componentInfo = countComponents(adjacency);
 
 interface SimResult {
   frames: NodeState[][];
@@ -120,26 +158,16 @@ function simulate(contactRate: number): SimResult {
 }
 
 export function initEpidemicThreshold(): void {
-  const slider = must(document.getElementById("contact-slider") as HTMLInputElement | null);
+  const contactSlider = must(document.getElementById("contact-slider") as HTMLInputElement | null);
   const contactOutput = must(document.getElementById("contact-output"));
+  const densitySlider = must(document.getElementById("density-slider") as HTMLInputElement | null);
+  const densityOutput = must(document.getElementById("density-output"));
   const nodesGroup = must(document.querySelector<SVGGElement>("#network-nodes"));
   const edgesGroup = must(document.querySelector<SVGGElement>("#network-edges"));
   const infectedLine = must(document.querySelector<SVGPolylineElement>("#infected-line"));
   const tickStatus = must(document.getElementById("tick-status"));
   const outcomeReadout = must(document.getElementById("outcome-readout"));
-
-  for (const [i, edges] of adjacency.entries()) {
-    for (const j of edges) {
-      if (j <= i) continue;
-      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      line.setAttribute("x1", positions[i].x.toFixed(1));
-      line.setAttribute("y1", positions[i].y.toFixed(1));
-      line.setAttribute("x2", positions[j].x.toFixed(1));
-      line.setAttribute("y2", positions[j].y.toFixed(1));
-      line.setAttribute("class", "edge");
-      edgesGroup.appendChild(line);
-    }
-  }
+  const presetButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-rate]"));
 
   const nodeCircles: SVGCircleElement[] = positions.map((point) => {
     const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -150,6 +178,22 @@ export function initEpidemicThreshold(): void {
     nodesGroup.appendChild(circle);
     return circle;
   });
+
+  function renderEdges(): void {
+    edgesGroup.replaceChildren();
+    for (const [i, edges] of adjacency.entries()) {
+      for (const j of edges) {
+        if (j <= i) continue;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", positions[i].x.toFixed(1));
+        line.setAttribute("y1", positions[i].y.toFixed(1));
+        line.setAttribute("x2", positions[j].x.toFixed(1));
+        line.setAttribute("y2", positions[j].y.toFixed(1));
+        line.setAttribute("class", "edge");
+        edgesGroup.appendChild(line);
+      }
+    }
+  }
 
   let animationTimer: ReturnType<typeof setInterval> | undefined;
 
@@ -191,20 +235,48 @@ export function initEpidemicThreshold(): void {
           clearInterval(animationTimer);
           animationTimer = undefined;
         }
+        const reachabilityNote =
+          componentInfo.giant < NODE_COUNT
+            ? ` At this network density, only ${componentInfo.giant} of ${NODE_COUNT} people are even reachable from patient zero.`
+            : "";
         outcomeReadout.textContent =
-          sim.totalEverInfected >= OUTBREAK_THRESHOLD
+          (sim.totalEverInfected >= OUTBREAK_THRESHOLD
             ? `Full-blown outbreak — ${sim.totalEverInfected} of ${NODE_COUNT} people caught it before it burned out.`
-            : `Fizzled out — only ${sim.totalEverInfected} of ${NODE_COUNT} people ever got sick.`;
+            : `Fizzled out — only ${sim.totalEverInfected} of ${NODE_COUNT} people ever got sick.`) + reachabilityNote;
       }
     }, STEP_MS);
   }
 
-  function onSliderChange(): void {
-    const contactRate = Number(slider.value);
-    contactOutput.textContent = contactRate.toFixed(1);
-    runAnimation(contactRate);
+  function setContactRate(value: number): void {
+    contactSlider.value = String(value);
+    contactOutput.textContent = value.toFixed(1);
+    runAnimation(value);
   }
 
-  slider.addEventListener("input", onSliderChange);
-  onSliderChange();
+  function onContactSliderInput(): void {
+    setContactRate(Number(contactSlider.value));
+  }
+
+  function onDensitySliderInput(): void {
+    const radius = Number(densitySlider.value);
+    adjacency = buildAdjacency(positions, radius);
+    avgDegree = computeAvgDegree(adjacency);
+    componentInfo = countComponents(adjacency);
+    densityOutput.textContent = `≈${avgDegree.toFixed(1)} contacts each`;
+    renderEdges();
+    runAnimation(Number(contactSlider.value));
+  }
+
+  contactSlider.addEventListener("input", onContactSliderInput);
+  densitySlider.addEventListener("input", onDensitySliderInput);
+  for (const button of presetButtons) {
+    button.addEventListener("click", () => {
+      setContactRate(Number(button.dataset.rate));
+    });
+  }
+
+  renderEdges();
+  contactOutput.textContent = Number(contactSlider.value).toFixed(1);
+  densityOutput.textContent = `≈${avgDegree.toFixed(1)} contacts each`;
+  runAnimation(Number(contactSlider.value));
 }
