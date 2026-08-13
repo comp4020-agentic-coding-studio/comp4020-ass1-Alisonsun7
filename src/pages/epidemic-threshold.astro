@@ -19,6 +19,19 @@ const base = import.meta.env.BASE_URL;
   </p>
 
   <section class="panel" aria-label="Simulation">
+    <p class="preset-caption">Layout:</p>
+    <div class="btn-row" role="group" aria-label="Simulation layout">
+      <button class="btn" type="button" data-mode="simple" aria-pressed="true">Simple</button>
+      <button class="btn" type="button" data-mode="central" aria-pressed="false">Central location</button>
+      <button class="btn" type="button" data-mode="communities" aria-pressed="false">Communities</button>
+    </div>
+    <p class="preset-note">
+      <strong>Simple:</strong> everyone wanders freely. <strong>Central
+        location:</strong> everyone occasionally visits and lingers at one shared
+      spot, like a market or well. <strong>Communities:</strong> four separate
+      groups, with rare travel between them.
+    </p>
+
     <div class="controls">
       <div class="control">
         <label for="contact-slider"
@@ -50,10 +63,13 @@ const base = import.meta.env.BASE_URL;
 
     <p class="assumption">
       180 people bouncing at a fixed speed inside the box below, one starts
-      infected, each stays infectious for the same number of frames before
+      infectious, each stays infectious for the same number of frames before
       recovering. Patient zero and every coin flip behind a run are fixed by
-      a seed — only the two sliders change anything: how many people each
-      infected person passes it to, and how tightly packed everyone is.
+      a seed — only the sliders, checkbox, and layout buttons change
+      anything: how many people each infectious person passes it to, how
+      tightly packed everyone is, how long a case incubates silently before
+      it can be caught, and whether confirmed cases are removed from
+      circulation.
     </p>
 
     <div class="controls">
@@ -65,7 +81,23 @@ const base = import.meta.env.BASE_URL;
         >
         <input type="range" id="density-slider" min="60" max="160" step="10" value="100" />
       </div>
+      <div class="control">
+        <label for="incubation-slider"
+          >Incubation period <output id="incubation-output" for="incubation-slider"
+            >None (plain S-I-R)</output
+          ></label
+        >
+        <input type="range" id="incubation-slider" min="0" max="240" step="20" value="0" />
+      </div>
     </div>
+
+    <p class="quarantine-row">
+      <label>
+        <input type="checkbox" id="quarantine-checkbox" />
+        Quarantine confirmed cases (freezes infectious particles in place —
+        does not catch anyone still incubating)
+      </label>
+    </p>
 
     <div class="btn-row sim-controls">
       <button class="btn" type="button" id="pause-btn">Pause</button>
@@ -76,8 +108,9 @@ const base = import.meta.env.BASE_URL;
     ></canvas>
     <p class="network-legend">
       <span class="swatch swatch-s"></span>Susceptible &nbsp;&nbsp;<span
-        class="swatch swatch-i"
-      ></span>Infected &nbsp;&nbsp;<span class="swatch swatch-r"></span>Recovered
+        class="swatch swatch-e"
+      ></span>Incubating &nbsp;&nbsp;<span class="swatch swatch-i"
+      ></span>Infectious &nbsp;&nbsp;<span class="swatch swatch-r"></span>Recovered
     </p>
 
     <div class="stat-row">
@@ -86,8 +119,12 @@ const base = import.meta.env.BASE_URL;
         <span class="label">Susceptible</span>
       </div>
       <div class="stat">
+        <span class="value" id="stat-e">0.0%</span>
+        <span class="label">Incubating</span>
+      </div>
+      <div class="stat">
         <span class="value" id="stat-i">0.0%</span>
-        <span class="label">Infected</span>
+        <span class="label">Infectious</span>
       </div>
       <div class="stat">
         <span class="value" id="stat-r">0.0%</span>
@@ -98,13 +135,15 @@ const base = import.meta.env.BASE_URL;
     <svg class="growth-chart" viewBox="0 0 600 200" role="img" aria-labelledby="et-chart-title">
       <title id="et-chart-title">Share of the population in each state, over time</title>
       <polygon id="chart-area-s" class="area-s" points="" />
+      <polygon id="chart-area-e" class="area-e" points="" />
       <polygon id="chart-area-i" class="area-i" points="" />
       <polygon id="chart-area-r" class="area-r" points="" />
     </svg>
     <p class="chart-legend">
       <span class="swatch swatch-s"></span>Susceptible &nbsp;&nbsp;<span
-        class="swatch swatch-i"
-      ></span>Infected &nbsp;&nbsp;<span class="swatch swatch-r"></span>Recovered
+        class="swatch swatch-e"
+      ></span>Incubating &nbsp;&nbsp;<span class="swatch swatch-i"
+      ></span>Infectious &nbsp;&nbsp;<span class="swatch swatch-r"></span>Recovered
     </p>
 
     <p id="tick-status" aria-live="polite"></p>
@@ -159,8 +198,22 @@ const base = import.meta.env.BASE_URL;
     margin-top: var(--space-4);
   }
 
+  .quarantine-row {
+    margin-top: var(--space-3);
+    color: var(--fg);
+  }
+
   .sim-controls {
     margin-bottom: var(--space-3);
+  }
+
+  [data-mode] {
+    opacity: 0.6;
+  }
+
+  [data-mode][aria-pressed="true"] {
+    opacity: 1;
+    font-weight: 600;
   }
 
   .sim-canvas {
@@ -184,6 +237,10 @@ const base = import.meta.env.BASE_URL;
     background: #9ca3af;
   }
 
+  .swatch-e {
+    background: #f59e0b;
+  }
+
   .swatch-i {
     background: #dc2626;
   }
@@ -194,6 +251,10 @@ const base = import.meta.env.BASE_URL;
 
   .growth-chart .area-s {
     fill: #9ca3af;
+  }
+
+  .growth-chart .area-e {
+    fill: #f59e0b;
   }
 
   .growth-chart .area-i {

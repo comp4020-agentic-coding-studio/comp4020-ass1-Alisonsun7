@@ -15,7 +15,17 @@ const CHART_WIDTH = 600;
 const CHART_HEIGHT = 200;
 const CHART_MAX_POINTS = 240;
 
-type NodeState = "S" | "I" | "R";
+const NUM_CLUSTERS = 4;
+const CLUSTER_GAP_FRACTION = 0.08;
+const JUMP_PROBABILITY = 0.0006;
+
+const HOTSPOT_FRACTION = 0.07;
+const TRIP_PROBABILITY = 0.0015;
+const LINGER_FRAMES = 90;
+
+type Mode = "simple" | "central" | "communities";
+type NodeState = "S" | "E" | "I" | "R";
+type TripPhase = "wander" | "toCenter" | "atCenter";
 
 interface Particle {
   x: number;
@@ -23,7 +33,18 @@ interface Particle {
   vx: number;
   vy: number;
   state: NodeState;
+  incubatingFor: number;
   infectedFor: number;
+  clusterIndex: number;
+  tripPhase: TripPhase;
+  tripTimer: number;
+}
+
+interface Bounds {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
 }
 
 function mulberry32(seed: number): () => number {
@@ -37,46 +58,158 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-function spawnParticles(rng: () => number, width: number, height: number): Particle[] {
+function clusterBounds(width: number, height: number): Bounds[] {
+  const gapX = width * CLUSTER_GAP_FRACTION;
+  const gapY = height * CLUSTER_GAP_FRACTION;
+  const halfW = (width - gapX) / 2;
+  const halfH = (height - gapY) / 2;
+  return [
+    { minX: 0, maxX: halfW, minY: 0, maxY: halfH },
+    { minX: width - halfW, maxX: width, minY: 0, maxY: halfH },
+    { minX: 0, maxX: halfW, minY: height - halfH, maxY: height },
+    { minX: width - halfW, maxX: width, minY: height - halfH, maxY: height },
+  ];
+}
+
+function randomPositionIn(rng: () => number, bounds: Bounds): { x: number; y: number } {
+  return {
+    x: bounds.minX + DRAW_RADIUS + rng() * Math.max(bounds.maxX - bounds.minX - 2 * DRAW_RADIUS, 0),
+    y: bounds.minY + DRAW_RADIUS + rng() * Math.max(bounds.maxY - bounds.minY - 2 * DRAW_RADIUS, 0),
+  };
+}
+
+function newParticle(x: number, y: number, angle: number, clusterIndex: number): Particle {
+  return {
+    x,
+    y,
+    vx: Math.cos(angle) * PARTICLE_SPEED,
+    vy: Math.sin(angle) * PARTICLE_SPEED,
+    state: "S",
+    incubatingFor: 0,
+    infectedFor: 0,
+    clusterIndex,
+    tripPhase: "wander",
+    tripTimer: 0,
+  };
+}
+
+function spawnParticles(rng: () => number, mode: Mode, width: number, height: number): Particle[] {
   const particles: Particle[] = [];
-  for (let i = 0; i < N_PARTICLES; i += 1) {
-    const angle = rng() * Math.PI * 2;
-    particles.push({
-      x: DRAW_RADIUS + rng() * (width - 2 * DRAW_RADIUS),
-      y: DRAW_RADIUS + rng() * (height - 2 * DRAW_RADIUS),
-      vx: Math.cos(angle) * PARTICLE_SPEED,
-      vy: Math.sin(angle) * PARTICLE_SPEED,
-      state: "S",
-      infectedFor: 0,
-    });
+  if (mode === "communities") {
+    const bounds = clusterBounds(width, height);
+    for (let i = 0; i < N_PARTICLES; i += 1) {
+      const clusterIndex = i % NUM_CLUSTERS;
+      const angle = rng() * Math.PI * 2;
+      const { x, y } = randomPositionIn(rng, bounds[clusterIndex]);
+      particles.push(newParticle(x, y, angle, clusterIndex));
+    }
+  } else {
+    for (let i = 0; i < N_PARTICLES; i += 1) {
+      const angle = rng() * Math.PI * 2;
+      const x = DRAW_RADIUS + rng() * (width - 2 * DRAW_RADIUS);
+      const y = DRAW_RADIUS + rng() * (height - 2 * DRAW_RADIUS);
+      particles.push(newParticle(x, y, angle, 0));
+    }
   }
   particles[0].state = "I";
   return particles;
 }
 
-function stepPhysics(particles: Particle[], width: number, height: number): void {
+function bounceWithin(p: Particle, bounds: Bounds): void {
+  if (p.x < bounds.minX + DRAW_RADIUS || p.x > bounds.maxX - DRAW_RADIUS) p.vx *= -1;
+  if (p.y < bounds.minY + DRAW_RADIUS || p.y > bounds.maxY - DRAW_RADIUS) p.vy *= -1;
+  p.x = Math.min(Math.max(p.x, bounds.minX + DRAW_RADIUS), bounds.maxX - DRAW_RADIUS);
+  p.y = Math.min(Math.max(p.y, bounds.minY + DRAW_RADIUS), bounds.maxY - DRAW_RADIUS);
+}
+
+function applyCentralTrip(p: Particle, rng: () => number, centerX: number, centerY: number, hotspotRadius: number): void {
+  if (p.tripPhase === "wander") {
+    if (rng() < TRIP_PROBABILITY) p.tripPhase = "toCenter";
+    return;
+  }
+  if (p.tripPhase === "toCenter") {
+    const dx = centerX - p.x;
+    const dy = centerY - p.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < hotspotRadius) {
+      p.tripPhase = "atCenter";
+      p.tripTimer = LINGER_FRAMES;
+      const angle = rng() * Math.PI * 2;
+      p.vx = Math.cos(angle) * PARTICLE_SPEED * 0.4;
+      p.vy = Math.sin(angle) * PARTICLE_SPEED * 0.4;
+    } else {
+      p.vx = (dx / dist) * PARTICLE_SPEED;
+      p.vy = (dy / dist) * PARTICLE_SPEED;
+    }
+    return;
+  }
+  p.tripTimer -= 1;
+  if (rng() < 0.05) {
+    const angle = rng() * Math.PI * 2;
+    p.vx = Math.cos(angle) * PARTICLE_SPEED * 0.4;
+    p.vy = Math.sin(angle) * PARTICLE_SPEED * 0.4;
+  }
+  if (p.tripTimer <= 0) {
+    p.tripPhase = "wander";
+    const angle = rng() * Math.PI * 2;
+    p.vx = Math.cos(angle) * PARTICLE_SPEED;
+    p.vy = Math.sin(angle) * PARTICLE_SPEED;
+  }
+}
+
+function stepPhysics(
+  particles: Particle[],
+  rng: () => number,
+  mode: Mode,
+  width: number,
+  height: number,
+  quarantine: boolean,
+): void {
+  const worldBounds: Bounds = { minX: 0, maxX: width, minY: 0, maxY: height };
+  const communityBounds = mode === "communities" ? clusterBounds(width, height) : null;
+  const hotspotRadius = Math.min(width, height) * HOTSPOT_FRACTION;
+
   for (const p of particles) {
+    if (quarantine && p.state === "I") {
+      p.vx = 0;
+      p.vy = 0;
+      continue;
+    }
+    if (mode === "central") applyCentralTrip(p, rng, width / 2, height / 2, hotspotRadius);
+
     p.x += p.vx;
     p.y += p.vy;
-    if (p.x < DRAW_RADIUS || p.x > width - DRAW_RADIUS) p.vx *= -1;
-    if (p.y < DRAW_RADIUS || p.y > height - DRAW_RADIUS) p.vy *= -1;
-    p.x = Math.min(Math.max(p.x, DRAW_RADIUS), width - DRAW_RADIUS);
-    p.y = Math.min(Math.max(p.y, DRAW_RADIUS), height - DRAW_RADIUS);
+
+    if (communityBounds) {
+      bounceWithin(p, communityBounds[p.clusterIndex]);
+      if (rng() < JUMP_PROBABILITY) {
+        const newCluster = (p.clusterIndex + 1 + Math.floor(rng() * (NUM_CLUSTERS - 1))) % NUM_CLUSTERS;
+        const { x, y } = randomPositionIn(rng, communityBounds[newCluster]);
+        p.clusterIndex = newCluster;
+        p.x = x;
+        p.y = y;
+      }
+    } else {
+      bounceWithin(p, worldBounds);
+    }
   }
 }
 
 // Empirically measures how many other particles one particle encounters per
-// frame at a given world size — the particle-sim analogue of the old
+// frame at a given world size, using the SIMPLE layout as a fixed reference
+// point regardless of the active mode — the particle-sim analogue of the old
 // network model's "average degree". Used to calibrate infection probability
-// so the contact-rate slider keeps the same meaning: expected secondary
-// infections per infectious particle, assuming everyone it meets is
-// susceptible.
+// so the contact-rate slider keeps the same meaning across all three modes:
+// expected secondary infections per infectious particle under uniform
+// mixing. Whatever a mode's own spatial structure does to real contact
+// frequency (a shared hotspot, separated communities) is then a genuine,
+// unforced consequence of that structure, not something calibrated away.
 function measureAvgEncounters(width: number, height: number): number {
   const rng = mulberry32(MEASURE_SEED);
-  const particles = spawnParticles(rng, width, height);
+  const particles = spawnParticles(rng, "simple", width, height);
   let total = 0;
   for (let f = 0; f < MEASURE_FRAMES; f += 1) {
-    stepPhysics(particles, width, height);
+    stepPhysics(particles, rng, "simple", width, height, false);
     const reference = particles[0];
     for (let i = 1; i < particles.length; i += 1) {
       const dx = particles[i].x - reference.x;
@@ -104,6 +237,7 @@ function densityLabel(sliderValue: number): string {
 
 interface HistoryPoint {
   s: number;
+  e: number;
   i: number;
   r: number;
 }
@@ -113,6 +247,9 @@ export function initEpidemicThreshold(): void {
   const contactOutput = must(document.getElementById("contact-output"));
   const densitySlider = must(document.getElementById("density-slider") as HTMLInputElement | null);
   const densityOutput = must(document.getElementById("density-output"));
+  const incubationSlider = must(document.getElementById("incubation-slider") as HTMLInputElement | null);
+  const incubationOutput = must(document.getElementById("incubation-output"));
+  const quarantineCheckbox = must(document.getElementById("quarantine-checkbox") as HTMLInputElement | null);
   const pauseButton = must(document.getElementById("pause-btn") as HTMLButtonElement | null);
   const resetButton = must(document.getElementById("reset-btn") as HTMLButtonElement | null);
   const canvas = must(document.getElementById("sim-canvas") as HTMLCanvasElement | null);
@@ -120,25 +257,31 @@ export function initEpidemicThreshold(): void {
   if (!maybeCtx) throw new Error("expected 2d canvas context");
   const ctx: CanvasRenderingContext2D = maybeCtx;
   const statS = must(document.getElementById("stat-s"));
+  const statE = must(document.getElementById("stat-e"));
   const statI = must(document.getElementById("stat-i"));
   const statR = must(document.getElementById("stat-r"));
   const areaS = must(document.querySelector<SVGPolygonElement>("#chart-area-s"));
+  const areaE = must(document.querySelector<SVGPolygonElement>("#chart-area-e"));
   const areaI = must(document.querySelector<SVGPolygonElement>("#chart-area-i"));
   const areaR = must(document.querySelector<SVGPolygonElement>("#chart-area-r"));
   const tickStatus = must(document.getElementById("tick-status"));
   const outcomeReadout = must(document.getElementById("outcome-readout"));
   const presetButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-rate]"));
+  const modeButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-mode]"));
 
+  let mode: Mode = "simple";
   let worldWidth = CANVAS_W;
   let worldHeight = CANVAS_H;
   let avgEncounters = measureAvgEncounters(worldWidth, worldHeight);
   let particles: Particle[] = [];
   let history: HistoryPoint[] = [];
   let contactRate = Number(contactSlider.value);
+  let incubationFrames = Number(incubationSlider.value);
   let infectProbability = 0;
   let paused = false;
   let rafHandle: number | undefined;
   let ended = false;
+  let rng: () => number = mulberry32(SIM_SEED);
 
   function drawScale(): number {
     return CANVAS_W / worldWidth;
@@ -149,8 +292,8 @@ export function initEpidemicThreshold(): void {
   }
 
   function resetSim(): void {
-    const rng = mulberry32(SIM_SEED);
-    particles = spawnParticles(rng, worldWidth, worldHeight);
+    rng = mulberry32(SIM_SEED);
+    particles = spawnParticles(rng, mode, worldWidth, worldHeight);
     history = [];
     infectProbability = computeInfectProbability();
     paused = false;
@@ -167,19 +310,33 @@ export function initEpidemicThreshold(): void {
     for (const p of particles) {
       ctx.beginPath();
       ctx.arc(p.x * scale, p.y * scale, DRAW_RADIUS, 0, Math.PI * 2);
-      ctx.fillStyle = p.state === "S" ? "#9ca3af" : p.state === "I" ? "#dc2626" : "#2563eb";
+      ctx.fillStyle =
+        p.state === "S" ? "#9ca3af" : p.state === "E" ? "#f59e0b" : p.state === "I" ? "#dc2626" : "#2563eb";
       ctx.fill();
     }
   }
 
+  function counts(): { s: number; e: number; i: number; r: number } {
+    let s = 0;
+    let e = 0;
+    let i = 0;
+    let r = 0;
+    for (const p of particles) {
+      if (p.state === "S") s += 1;
+      else if (p.state === "E") e += 1;
+      else if (p.state === "I") i += 1;
+      else r += 1;
+    }
+    return { s, e, i, r };
+  }
+
   function updateStats(): void {
-    const sCount = particles.filter((p) => p.state === "S").length;
-    const iCount = particles.filter((p) => p.state === "I").length;
-    const rCount = particles.filter((p) => p.state === "R").length;
-    statS.textContent = `${((sCount / N_PARTICLES) * 100).toFixed(1)}%`;
-    statI.textContent = `${((iCount / N_PARTICLES) * 100).toFixed(1)}%`;
-    statR.textContent = `${((rCount / N_PARTICLES) * 100).toFixed(1)}%`;
-    tickStatus.textContent = `Currently infected: ${iCount} of ${N_PARTICLES}`;
+    const { s, e, i, r } = counts();
+    statS.textContent = `${((s / N_PARTICLES) * 100).toFixed(1)}%`;
+    statE.textContent = `${((e / N_PARTICLES) * 100).toFixed(1)}%`;
+    statI.textContent = `${((i / N_PARTICLES) * 100).toFixed(1)}%`;
+    statR.textContent = `${((r / N_PARTICLES) * 100).toFixed(1)}%`;
+    tickStatus.textContent = `Currently infectious: ${i} of ${N_PARTICLES}${e > 0 ? `, incubating: ${e}` : ""}`;
     redrawChart();
   }
 
@@ -191,14 +348,17 @@ export function initEpidemicThreshold(): void {
     const startIndex = CHART_MAX_POINTS - n;
 
     const sTop: string[] = [];
+    const eTop: string[] = [];
     const iTop: string[] = [];
     const rTop: string[] = [];
     points.forEach((point, index) => {
       const x = (startIndex + index) * stepX;
       const sFrac = point.s / N_PARTICLES;
+      const eFrac = point.e / N_PARTICLES;
       const iFrac = point.i / N_PARTICLES;
       sTop.push(`${x.toFixed(1)},${(CHART_HEIGHT * (1 - sFrac)).toFixed(1)}`);
-      iTop.push(`${x.toFixed(1)},${(CHART_HEIGHT * (1 - sFrac - iFrac)).toFixed(1)}`);
+      eTop.push(`${x.toFixed(1)},${(CHART_HEIGHT * (1 - sFrac - eFrac)).toFixed(1)}`);
+      iTop.push(`${x.toFixed(1)},${(CHART_HEIGHT * (1 - sFrac - eFrac - iFrac)).toFixed(1)}`);
       rTop.push(`${x.toFixed(1)},${0}`);
     });
     const firstX = startIndex * stepX;
@@ -208,46 +368,57 @@ export function initEpidemicThreshold(): void {
       "points",
       `${firstX.toFixed(1)},${CHART_HEIGHT} ${sTop.join(" ")} ${lastX.toFixed(1)},${CHART_HEIGHT}`,
     );
-    areaI.setAttribute("points", `${sTop.join(" ")} ${[...iTop].reverse().join(" ")}`);
+    areaE.setAttribute("points", `${sTop.join(" ")} ${[...eTop].reverse().join(" ")}`);
+    areaI.setAttribute("points", `${eTop.join(" ")} ${[...iTop].reverse().join(" ")}`);
     areaR.setAttribute("points", `${iTop.join(" ")} ${[...rTop].reverse().join(" ")}`);
   }
 
   function tick(): void {
     if (!paused && !ended) {
-      stepPhysics(particles, worldWidth, worldHeight);
+      const quarantineOn = quarantineCheckbox.checked;
+      stepPhysics(particles, rng, mode, worldWidth, worldHeight, quarantineOn);
 
-      const infected = particles.filter((p) => p.state === "I");
-      const newlyInfected: Particle[] = [];
-      for (const infectedParticle of infected) {
+      const infectious = particles.filter((p) => p.state === "I");
+      const newlyExposed = new Set<Particle>();
+      for (const infectedParticle of infectious) {
         for (const other of particles) {
-          if (other.state !== "S") continue;
+          if (other.state !== "S" || newlyExposed.has(other)) continue;
           const dx = infectedParticle.x - other.x;
           const dy = infectedParticle.y - other.y;
-          if (Math.sqrt(dx * dx + dy * dy) < CONTACT_DISTANCE && Math.random() < infectProbability) {
-            newlyInfected.push(other);
+          if (Math.sqrt(dx * dx + dy * dy) < CONTACT_DISTANCE && rng() < infectProbability) {
+            newlyExposed.add(other);
           }
         }
       }
-      for (const infectedParticle of infected) {
-        infectedParticle.infectedFor += 1;
-        if (infectedParticle.infectedFor >= INFECTIOUS_DURATION_FRAMES) infectedParticle.state = "R";
+
+      for (const p of particles) {
+        if (p.state === "E") {
+          p.incubatingFor += 1;
+          if (p.incubatingFor >= incubationFrames) {
+            p.state = "I";
+            p.infectedFor = 0;
+          }
+        } else if (p.state === "I") {
+          p.infectedFor += 1;
+          if (p.infectedFor >= INFECTIOUS_DURATION_FRAMES) p.state = "R";
+        }
       }
-      for (const p of newlyInfected) {
-        if (p.state === "S") p.state = "I";
+      for (const p of newlyExposed) {
+        if (p.state === "S") {
+          p.state = "E";
+          p.incubatingFor = 0;
+        }
       }
 
-      const sCount = particles.filter((p) => p.state === "S").length;
-      const iCount = particles.filter((p) => p.state === "I").length;
-      const rCount = particles.filter((p) => p.state === "R").length;
-      history.push({ s: sCount, i: iCount, r: rCount });
+      const { s, e, i, r } = counts();
+      history.push({ s, e, i, r });
 
-      if (iCount === 0) {
+      if (e === 0 && i === 0) {
         ended = true;
-        const everInfected = rCount;
         outcomeReadout.textContent =
-          everInfected >= N_PARTICLES * OUTBREAK_FRACTION
-            ? `Full-blown outbreak — ${everInfected} of ${N_PARTICLES} people caught it before it burned out.`
-            : `Fizzled out — only ${everInfected} of ${N_PARTICLES} people ever got sick.`;
+          r >= N_PARTICLES * OUTBREAK_FRACTION
+            ? `Full-blown outbreak — ${r} of ${N_PARTICLES} people caught it before it burned out.`
+            : `Fizzled out — only ${r} of ${N_PARTICLES} people ever got sick.`;
       }
 
       drawFrame();
@@ -272,10 +443,37 @@ export function initEpidemicThreshold(): void {
     resetSim();
   }
 
+  function setMode(nextMode: Mode): void {
+    mode = nextMode;
+    for (const button of modeButtons) {
+      button.setAttribute("aria-pressed", String(button.dataset.mode === nextMode));
+    }
+    resetSim();
+  }
+
   contactSlider.addEventListener("input", () => setContactRate(Number(contactSlider.value)));
   densitySlider.addEventListener("input", rebuildDensity);
+  incubationSlider.addEventListener("input", () => {
+    incubationFrames = Number(incubationSlider.value);
+    incubationOutput.textContent = incubationFrames === 0 ? "None (plain S-I-R)" : `${incubationFrames} frames`;
+    resetSim();
+  });
+  quarantineCheckbox.addEventListener("change", () => {
+    if (!quarantineCheckbox.checked) {
+      for (const p of particles) {
+        if (p.state === "I" && p.vx === 0 && p.vy === 0) {
+          const angle = rng() * Math.PI * 2;
+          p.vx = Math.cos(angle) * PARTICLE_SPEED;
+          p.vy = Math.sin(angle) * PARTICLE_SPEED;
+        }
+      }
+    }
+  });
   for (const button of presetButtons) {
     button.addEventListener("click", () => setContactRate(Number(button.dataset.rate)));
+  }
+  for (const button of modeButtons) {
+    button.addEventListener("click", () => setMode(button.dataset.mode as Mode));
   }
   pauseButton.addEventListener("click", () => {
     if (ended) return;
@@ -286,6 +484,7 @@ export function initEpidemicThreshold(): void {
 
   contactOutput.textContent = contactRate.toFixed(1);
   densityOutput.textContent = densityLabel(Number(densitySlider.value));
+  incubationOutput.textContent = incubationFrames === 0 ? "None (plain S-I-R)" : `${incubationFrames} frames`;
   resetSim();
   rafHandle = requestAnimationFrame(tick);
   window.addEventListener("beforeunload", () => {
