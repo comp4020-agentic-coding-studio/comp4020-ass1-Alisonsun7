@@ -242,6 +242,51 @@ interface HistoryPoint {
   r: number;
 }
 
+// Generic accordion wiring for the parameter and disease/regime buttons: each
+// trigger names its own detail block via data-toggle, and triggers sharing a
+// data-toggle-group close each other so only one detail block per group is
+// open at a time. A matching `#<group>-placeholder` element (if present) is
+// shown only while nothing in that group is open.
+function initToggleGroups(): void {
+  const triggers = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-toggle]"));
+  const byGroup = new Map<string, HTMLButtonElement[]>();
+  for (const trigger of triggers) {
+    const group = trigger.dataset.toggleGroup ?? trigger.dataset.toggle ?? "";
+    byGroup.set(group, [...(byGroup.get(group) ?? []), trigger]);
+  }
+
+  function refreshPlaceholder(group: string): void {
+    const placeholder = document.getElementById(`${group}-placeholder`);
+    if (!placeholder) return;
+    const anyOpen = (byGroup.get(group) ?? []).some((t) => t.getAttribute("aria-expanded") === "true");
+    placeholder.hidden = anyOpen;
+  }
+
+  for (const trigger of triggers) {
+    trigger.addEventListener("click", () => {
+      const targetId = trigger.dataset.toggle;
+      if (!targetId) return;
+      const target = document.getElementById(targetId);
+      if (!target) return;
+      const group = trigger.dataset.toggleGroup ?? targetId;
+      const wasOpen = trigger.getAttribute("aria-expanded") === "true";
+
+      for (const sibling of byGroup.get(group) ?? []) {
+        sibling.setAttribute("aria-expanded", "false");
+        const siblingTargetId = sibling.dataset.toggle;
+        const siblingTarget = siblingTargetId ? document.getElementById(siblingTargetId) : null;
+        if (siblingTarget) siblingTarget.hidden = true;
+      }
+
+      if (!wasOpen) {
+        trigger.setAttribute("aria-expanded", "true");
+        target.hidden = false;
+      }
+      refreshPlaceholder(group);
+    });
+  }
+}
+
 export function initEpidemicThreshold(): void {
   const contactSlider = must(document.getElementById("contact-slider") as HTMLInputElement | null);
   const contactOutput = must(document.getElementById("contact-output"));
@@ -490,4 +535,6 @@ export function initEpidemicThreshold(): void {
   window.addEventListener("beforeunload", () => {
     if (rafHandle !== undefined) cancelAnimationFrame(rafHandle);
   });
+
+  initToggleGroups();
 }
