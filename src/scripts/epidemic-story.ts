@@ -3,6 +3,16 @@ import { must } from "./dom";
 export type Mode = "simple" | "central" | "communities";
 type State = "S" | "I" | "R";
 
+interface Transit {
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  toCommunity: number;
+  frame: number;
+  totalFrames: number;
+}
+
 interface Particle {
   x: number;
   y: number;
@@ -15,6 +25,8 @@ interface Particle {
   target: { x: number; y: number } | null;
   masked: boolean;
   isolated: boolean;
+  transit: Transit | null;
+  trail: { x: number; y: number }[];
 }
 
 const WIDTH = 800;
@@ -39,6 +51,10 @@ const DEFAULT_MASK_EFFECTIVENESS = 0.5;
 const ISOLATION_ZONE = { x0: WIDTH - 180, y0: HEIGHT - 130, x1: WIDTH - 10, y1: HEIGHT - 10 };
 const ISOLATION_COLS = 5;
 const ISOLATION_ROWS = 6;
+const ISOLATION_GAP = 30;
+const ISOLATION_ENTRY_CHANCE = 0.05;
+const TRAVEL_TRANSIT_FRAMES = 45;
+const TRAVEL_TRAIL_LENGTH = 8;
 
 const MODE_LABELS: Record<Mode, string> = {
   simple: "Simple case",
@@ -135,6 +151,8 @@ function createParticles(
       target: null,
       masked: rng() < maskRate,
       isolated: false,
+      transit: null,
+      trail: [],
     });
   }
   // Vaccinate everyone except whoever becomes patient zero below, so a
@@ -166,6 +184,38 @@ function isolationSlotPosition(index: number): { x: number; y: number } {
     x: ISOLATION_ZONE.x0 + cellW * (col + 0.5),
     y: ISOLATION_ZONE.y0 + cellH * (row + 0.5),
   };
+}
+
+// Repels a particle from the isolation zone instead of containing it, the
+// inverse of bounceWithinBox: a small gap in the top edge lets a fraction of
+// crossings through (ISOLATION_ENTRY_CHANCE) so the barrier reads as mostly,
+// not perfectly, effective.
+function blockIsolationZone(
+  p: Particle,
+  prevX: number,
+  prevY: number,
+  rng: () => number,
+): void {
+  const insideNow =
+    p.x > ISOLATION_ZONE.x0 &&
+    p.x < ISOLATION_ZONE.x1 &&
+    p.y > ISOLATION_ZONE.y0 &&
+    p.y < ISOLATION_ZONE.y1;
+  if (!insideNow) return;
+
+  const gapX0 = (ISOLATION_ZONE.x0 + ISOLATION_ZONE.x1) / 2 - ISOLATION_GAP / 2;
+  const gapX1 = gapX0 + ISOLATION_GAP;
+  const crossedTopThroughGap = prevY <= ISOLATION_ZONE.y0 && p.x > gapX0 && p.x < gapX1;
+  if (crossedTopThroughGap && rng() < ISOLATION_ENTRY_CHANCE) return;
+
+  if (prevX <= ISOLATION_ZONE.x0 || prevX >= ISOLATION_ZONE.x1) {
+    p.x = prevX;
+    p.vx = -p.vx;
+  }
+  if (prevY <= ISOLATION_ZONE.y0 || prevY >= ISOLATION_ZONE.y1) {
+    p.y = prevY;
+    p.vy = -p.vy;
+  }
 }
 
 interface StepOptions {
@@ -205,8 +255,37 @@ function stepParticle(p: Particle, opts: StepOptions): void {
   }
 
   if (opts.mode === "communities") {
+    if (p.transit) {
+      p.transit.frame++;
+      const t = p.transit.frame / p.transit.totalFrames;
+      p.trail.push({ x: p.x, y: p.y });
+      if (p.trail.length > TRAVEL_TRAIL_LENGTH) p.trail.shift();
+      if (t >= 1) {
+        p.x = p.transit.toX;
+        p.y = p.transit.toY;
+        p.community = p.transit.toCommunity;
+        p.transit = null;
+        p.trail = [];
+      } else {
+        p.x = p.transit.fromX + (p.transit.toX - p.transit.fromX) * t;
+        p.y = p.transit.fromY + (p.transit.toY - p.transit.fromY) * t;
+      }
+      return;
+    }
     if (opts.rng() < opts.communityTravelChance) {
-      p.community = Math.floor(opts.rng() * COMMUNITY_COUNT);
+      const toCommunity = Math.floor(opts.rng() * COMMUNITY_COUNT);
+      const box = communityBox(toCommunity);
+      p.transit = {
+        fromX: p.x,
+        fromY: p.y,
+        toX: box.x0 + opts.rng() * (box.x1 - box.x0),
+        toY: box.y0 + opts.rng() * (box.y1 - box.y0),
+        toCommunity,
+        frame: 0,
+        totalFrames: TRAVEL_TRANSIT_FRAMES,
+      };
+      p.trail = [];
+      return;
     }
     if (opts.rng() < 0.02) {
       const { vx, vy } = randomVelocity(opts.rng);
@@ -219,6 +298,8 @@ function stepParticle(p: Particle, opts: StepOptions): void {
     return;
   }
 
+  const prevX = p.x;
+  const prevY = p.y;
   if (opts.rng() < 0.02) {
     const { vx, vy } = randomVelocity(opts.rng);
     p.vx = vx;
@@ -227,6 +308,7 @@ function stepParticle(p: Particle, opts: StepOptions): void {
   p.x += p.vx;
   p.y += p.vy;
   bounceWithinBox(p, { x0: 0, y0: 0, x1: WIDTH, y1: HEIGHT });
+  if (opts.quarantine) blockIsolationZone(p, prevX, prevY, opts.rng);
 }
 
 function updateInfections(
@@ -288,9 +370,19 @@ function drawIsolationZone(ctx: CanvasRenderingContext2D): void {
     ISOLATION_ZONE.y1 - ISOLATION_ZONE.y0,
   );
   ctx.setLineDash([]);
+
+  const gapX0 = (ISOLATION_ZONE.x0 + ISOLATION_ZONE.x1) / 2 - ISOLATION_GAP / 2;
+  const gapX1 = gapX0 + ISOLATION_GAP;
+  ctx.strokeStyle = "rgba(56, 189, 248, 0.9)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(gapX0, ISOLATION_ZONE.y0);
+  ctx.lineTo(gapX1, ISOLATION_ZONE.y0);
+  ctx.stroke();
+
   ctx.fillStyle = "rgba(226, 232, 240, 0.9)";
-  ctx.font = "11px system-ui, sans-serif";
-  ctx.fillText("Isolation zone", ISOLATION_ZONE.x0, ISOLATION_ZONE.y0 - 6);
+  ctx.font = "16px system-ui, sans-serif";
+  ctx.fillText("Isolation zone", ISOLATION_ZONE.x0, ISOLATION_ZONE.y0 - 8);
   ctx.restore();
 }
 
@@ -318,6 +410,18 @@ function draw(ctx: CanvasRenderingContext2D, particles: Particle[], opts: DrawOp
       ctx.lineWidth = 1;
       ctx.stroke();
     }
+  }
+
+  for (const p of particles) {
+    if (p.trail.length === 0) continue;
+    const trailColor = p.state === "S" ? "56, 189, 248" : p.state === "I" ? "251, 113, 89" : "148, 163, 184";
+    p.trail.forEach((point, idx) => {
+      const age = (idx + 1) / p.trail.length;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, PARTICLE_RADIUS * age, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${trailColor}, ${0.35 * age})`;
+      ctx.fill();
+    });
   }
 
   for (const p of particles) {
@@ -852,7 +956,9 @@ function initToggleGroups(): void {
 }
 
 const ISOLATION_SEED = 500_000_007;
+const ISOLATION_GAMMA_FIXED = 0.15;
 const HOTSPOT_GAMMA_FIXED = 0.12;
+const TRAVEL_GAMMA_FIXED = 0.15;
 const MASKS_GAMMA_FIXED = 0.15;
 const VACCINATION_GAMMA_FIXED = 0.15;
 
@@ -877,16 +983,33 @@ export function initEpidemicStory(): void {
     mode: "simple",
     quarantine: false,
     seed: ISOLATION_SEED,
+    infectionChance: 2.5 * ISOLATION_GAMMA_FIXED,
+    recoveryFrames: Math.round(FRAMES_PER_DAY / ISOLATION_GAMMA_FIXED),
   });
   const isolationOn = setupStandardWidget("isob", {
     mode: "simple",
     quarantine: true,
     seed: ISOLATION_SEED,
+    infectionChance: 2.5 * ISOLATION_GAMMA_FIXED,
+    recoveryFrames: Math.round(FRAMES_PER_DAY / ISOLATION_GAMMA_FIXED),
   });
   const resetBothButton = document.getElementById("isolation-reset-both");
   resetBothButton?.addEventListener("click", () => {
     isolationOff.reset();
     isolationOn.reset();
+  });
+  const isolationR0Slider = document.getElementById("isolation-r0-input") as HTMLInputElement | null;
+  const isolationR0InputOutput = document.getElementById("isolation-r0-input-output");
+  const isolationR0BetaOutput = document.getElementById("isolation-r0-beta-output");
+  const isolationR0Output = document.getElementById("isolation-r0-value");
+  isolationR0Slider?.addEventListener("input", () => {
+    const r0 = Number(isolationR0Slider.value);
+    const beta = r0 * ISOLATION_GAMMA_FIXED;
+    if (isolationR0InputOutput) isolationR0InputOutput.textContent = r0.toFixed(2);
+    if (isolationR0BetaOutput) isolationR0BetaOutput.textContent = beta.toFixed(2);
+    if (isolationR0Output) isolationR0Output.textContent = r0.toFixed(2);
+    isolationOff.setInfectionChance(beta);
+    isolationOn.setInfectionChance(beta);
   });
 
   setupStandardWidget("hotspot", {
@@ -894,8 +1017,13 @@ export function initEpidemicStory(): void {
     infectionChance: 2.08 * HOTSPOT_GAMMA_FIXED,
     recoveryFrames: Math.round(FRAMES_PER_DAY / HOTSPOT_GAMMA_FIXED),
   });
-  setupStandardWidget("communities", { mode: "communities" });
-  setupStandardWidget("travel", { mode: "communities", communityTravelChance: 0.001 });
+  setupStandardWidget("communities", { mode: "communities", communityTravelChance: 0 });
+  setupStandardWidget("travel", {
+    mode: "communities",
+    communityTravelChance: 0.001,
+    infectionChance: 2 * TRAVEL_GAMMA_FIXED,
+    recoveryFrames: Math.round(FRAMES_PER_DAY / TRAVEL_GAMMA_FIXED),
+  });
   setupStandardWidget("masks", {
     mode: "simple",
     infectionChance: 2 * MASKS_GAMMA_FIXED,

@@ -82,6 +82,31 @@ import ParticleWidget from "../components/ParticleWidget.astro";
       <div class="btn-row">
         <button class="btn" id="isolation-reset-both" type="button">Reset both, same seed</button>
       </div>
+      <div class="rec-slider rec-r0-wrapper" data-gamma-fixed="0.15">
+        <label for="isolation-r0-input">
+          R0 (drives both rooms above) <output class="rec-r0-input-output" id="isolation-r0-input-output" for="isolation-r0-input">2.50</output>
+        </label>
+        <input
+          class="rec-range rec-r0-input"
+          type="range"
+          id="isolation-r0-input"
+          min="0.5"
+          max="5"
+          step="0.01"
+          value="2.5"
+          list="isolation-r0-ticks"
+        />
+        <datalist id="isolation-r0-ticks">
+          <option value="0.5"></option>
+          <option value="1.63"></option>
+          <option value="2.75"></option>
+          <option value="3.88"></option>
+          <option value="5"></option>
+        </datalist>
+        <p class="r0-formula">
+          R0 = β / γ = <output class="rec-r0-beta-output" id="isolation-r0-beta-output" for="isolation-r0-input">0.38</output> / 0.15 = <output class="rec-r0-value" id="isolation-r0-value" for="isolation-r0-input">2.50</output>
+        </p>
+      </div>
       <p class="explainer">Isolation alone has a blind spot: it only removes people once they're already known to be sick, and by then they may have spent days silently contagious. Combined contact tracing and testing needs to reach roughly 60% efficacy before it reliably pushes the reproduction number below the tipping point (<a href="https://publichealth.jmir.org/2021/10/e32468/">JMIR Public Health and Surveillance, 2021</a>).</p>
     </div>
 
@@ -108,7 +133,15 @@ import ParticleWidget from "../components/ParticleWidget.astro";
     <div class="panel-sub" id="travel">
       <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#94a3b8" stroke-width="2"><line x1="20" y1="2" x2="20" y2="38" stroke-dasharray="3 3"></line><line x1="2" y1="20" x2="38" y2="20" stroke-dasharray="3 3"></line><path d="M11 11 C18 8 24 24 30 30" stroke="#fb7159" fill="none"></path><circle cx="30" cy="30" r="2.5" fill="#fb7159" stroke="none"></circle></svg></span> Communities aren't perfectly sealed</h3>
       <p class="explainer">Real communities leak: people commute, visit family, go on holiday. This slider controls exactly one thing — the chance, each frame, that someone currently in one community relocates to a random other one. Turn it up and watch the four-community advantage from above erode as the boundaries stop mattering.</p>
-      <ParticleWidget id="travel" mode="communities" sliders={["travel"]} travelDefault={0.1} ariaLabel="Inter-community travel demo: adjust how often people relocate between communities" />
+      <ParticleWidget
+        id="travel"
+        mode="communities"
+        sliders={["travel", "r0"]}
+        travelDefault={0.1}
+        r0Default={2}
+        r0GammaFixed={0.15}
+        ariaLabel="Inter-community travel demo: adjust how often people relocate between communities"
+      />
     </div>
 
     <div class="panel-sub" id="masks">
@@ -580,6 +613,78 @@ import ParticleWidget from "../components/ParticleWidget.astro";
         margin-inline-end: var(--space-3);
         margin-block-end: var(--space-2);
       }
+    }
+
+    .rec-slider {
+      margin-block-end: var(--space-3);
+    }
+
+    .rec-slider label {
+      display: block;
+      margin-block-end: var(--space-2);
+      font-weight: 600;
+    }
+
+    .rec-slider output {
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .r0-formula {
+      margin: var(--space-2) 0 0;
+      padding: var(--space-2) var(--space-3);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-weight: 600;
+    }
+
+    .r0-formula .rec-r0-value {
+      color: var(--accent);
+      font-weight: 800;
+    }
+
+    .rec-range {
+      width: 100%;
+      height: 6px;
+      background-color: var(--border);
+      background-image:
+        linear-gradient(to right, var(--muted) 0 2px, transparent 2px),
+        linear-gradient(to left, var(--muted) 0 2px, transparent 2px),
+        repeating-linear-gradient(to right, var(--muted) 0 2px, transparent 2px 25%);
+      background-repeat: no-repeat;
+      border-radius: 3px;
+      appearance: none;
+      outline: none;
+    }
+
+    .rec-range::-webkit-slider-thumb {
+      width: 16px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 50%;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .rec-range::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: var(--accent);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .rec-range::-moz-range-track {
+      height: 6px;
+      background-color: var(--border);
+      background-image:
+        linear-gradient(to right, var(--muted) 0 2px, transparent 2px),
+        linear-gradient(to left, var(--muted) 0 2px, transparent 2px),
+        repeating-linear-gradient(to right, var(--muted) 0 2px, transparent 2px 25%);
+      background-repeat: no-repeat;
+      border-radius: 3px;
     }
   </style>
 </BaseLayout>
