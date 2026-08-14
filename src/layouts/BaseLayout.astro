@@ -5,20 +5,21 @@ interface Props {
   title: string;
   description: string;
   accent?: "blue" | "violet" | "green" | "amber" | "rose";
-  activePath?: string;
 }
 
-const { title, description, accent = "blue", activePath } = Astro.props;
+const { title, description, accent = "blue" } = Astro.props;
 const base = import.meta.env.BASE_URL;
 
-const links = [
-  { href: base, label: "Home" },
-  { href: `${base}compound-interest/`, label: "Compound interest" },
-  { href: `${base}byte-scale/`, label: "How big is a byte" },
-  { href: `${base}tragedy-of-the-commons/`, label: "Tragedy of the commons" },
-  { href: `${base}epidemic-threshold/`, label: "Epidemic threshold" },
-  { href: `${base}monty-hall/`, label: "Monty Hall" },
-  { href: `${base}epidemic-simulation/`, label: "Epidemic simulation (bonus)" },
+const sections = [
+  { href: "#simple-case", label: "Simple case" },
+  { href: "#measuring", label: "Measuring" },
+  { href: "#parameters", label: "Parameters" },
+  { href: "#isolation", label: "Isolation" },
+  { href: "#hotspot", label: "Hotspot" },
+  { href: "#communities", label: "Communities" },
+  { href: "#real-diseases", label: "Real diseases" },
+  { href: "#sandbox", label: "Sandbox" },
+  { href: "#takeaways", label: "Takeaways" },
 ];
 ---
 
@@ -33,17 +34,12 @@ const links = [
   <body data-accent={accent}>
     <header class="site-header">
       <nav aria-label="Primary">
-        <a class="brand" href={base}>Five small explainers</a>
+        <a class="brand" href={base}>What stops an outbreak</a>
         <ul>
           {
-            links.map((link) => (
+            sections.map((section) => (
               <li>
-                <a
-                  href={link.href}
-                  aria-current={activePath === link.href ? "page" : undefined}
-                >
-                  {link.label}
-                </a>
+                <a href={section.href}>{section.label}</a>
               </li>
             ))
           }
@@ -54,7 +50,7 @@ const links = [
       <slot />
     </main>
     <footer class="site-footer">
-      <p>COMP4020/8020 Assignment 1 — five interactive prototypes, built to pick one.</p>
+      <p>COMP4020/8020 Assignment 1 — one interactive deep-dive into epidemic modelling.</p>
     </footer>
   </body>
 </html>
