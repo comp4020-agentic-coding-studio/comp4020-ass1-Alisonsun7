@@ -1,0 +1,378 @@
+---
+interface Props {
+  id: string;
+  mode: "simple" | "central" | "communities";
+  showChart?: boolean;
+  showSliders?: boolean;
+  showQuarantineCheckbox?: boolean;
+  showModeTabs?: boolean;
+  badge?: string;
+  ariaLabel?: string;
+}
+
+const {
+  id,
+  mode,
+  showChart = true,
+  showSliders = false,
+  showQuarantineCheckbox = false,
+  showModeTabs = false,
+  badge,
+  ariaLabel = "Bouncing-particle epidemic simulation",
+} = Astro.props;
+---
+
+<div class="rec-widget" id={`${id}-widget`} data-initial-mode={mode}>
+  {
+    showModeTabs && (
+      <div class="rec-tabs" role="tablist" aria-label="Simulation layout">
+        <button
+          class="rec-tab"
+          type="button"
+          data-rec-mode="simple"
+          aria-pressed={mode === "simple" ? "true" : "false"}
+        >
+          Simple
+        </button>
+        <button
+          class="rec-tab"
+          type="button"
+          data-rec-mode="central"
+          aria-pressed={mode === "central" ? "true" : "false"}
+        >
+          Central location
+        </button>
+        <button
+          class="rec-tab"
+          type="button"
+          data-rec-mode="communities"
+          aria-pressed={mode === "communities" ? "true" : "false"}
+        >
+          Communities
+        </button>
+      </div>
+    )
+  }
+
+  <p class="rec-case-label"></p>
+
+  <div class="rec-canvas-wrap">
+    <canvas class="rec-canvas" width="640" height="420" aria-label={ariaLabel}></canvas>
+  </div>
+
+  <div class="rec-pause-row">
+    <div class="btn-row">
+      <button class="btn rec-pause" type="button">Pause</button>
+      <button class="btn rec-reset" type="button">Reset</button>
+    </div>
+    {
+      showQuarantineCheckbox && (
+        <label class="rec-quarantine" for={`${id}-quarantine`}>
+          <input type="checkbox" id={`${id}-quarantine`} class="rec-quarantine-input" />
+          Quarantine confirmed cases
+        </label>
+      )
+    }
+    {badge && <p class="rec-badge">{badge}</p>}
+  </div>
+
+  {
+    showChart && (
+      <div class="rec-chart-row">
+        <svg
+          class="growth-chart rec-chart"
+          viewBox="0 0 320 150"
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          aria-label="Share of the population susceptible, infected, and recovered over time"
+        >
+          <line class="rec-grid" x1="40" y1="10" x2="310" y2="10" />
+          <line class="rec-grid" x1="40" y1="34" x2="310" y2="34" />
+          <line class="rec-grid" x1="40" y1="58" x2="310" y2="58" />
+          <line class="rec-grid" x1="40" y1="82" x2="310" y2="82" />
+          <line class="rec-grid" x1="40" y1="106" x2="310" y2="106" />
+          <line class="rec-axis" x1="40" y1="130" x2="310" y2="130" />
+          <text class="rec-axis-label" x="34" y="13" text-anchor="end">
+            100
+          </text>
+          <text class="rec-axis-label" x="34" y="37" text-anchor="end">
+            80
+          </text>
+          <text class="rec-axis-label" x="34" y="61" text-anchor="end">
+            60
+          </text>
+          <text class="rec-axis-label" x="34" y="85" text-anchor="end">
+            40
+          </text>
+          <text class="rec-axis-label" x="34" y="109" text-anchor="end">
+            20
+          </text>
+          <text class="rec-axis-label" x="34" y="133" text-anchor="end">
+            0
+          </text>
+          <text class="rec-axis-label rec-day" x="40" y="145">
+            Day 0
+          </text>
+          <polygon class="rec-band-s" points="40,130 310,130 310,130 40,130" />
+          <polygon class="rec-band-i" points="40,130 310,130 310,130 40,130" />
+          <polygon class="rec-band-r" points="40,130 310,130 310,130 40,130" />
+        </svg>
+        <ul class="rec-legend">
+          <li class="rec-legend-s"><span class="swatch rec-swatch-s" /><span class="rec-pct-s">99.3</span>% susceptible</li>
+          <li class="rec-legend-i"><span class="swatch rec-swatch-i" /><span class="rec-pct-i">0.7</span>% infected</li>
+          <li class="rec-legend-r"><span class="swatch rec-swatch-r" /><span class="rec-pct-r">0.0</span>% recovered</li>
+        </ul>
+      </div>
+    )
+  }
+
+  {
+    showSliders && (
+      <div class="rec-slider">
+        <label for={`${id}-radius`}>
+          Infection radius <output class="rec-radius-output" for={`${id}-radius`}>8</output>px
+        </label>
+        <input
+          class="rec-range rec-radius-input"
+          type="range"
+          id={`${id}-radius`}
+          min="4"
+          max="20"
+          step="1"
+          value="8"
+        />
+      </div>
+    )
+  }
+  {
+    showSliders && (
+      <div class="rec-slider">
+        <label for={`${id}-chance`}>
+          Chance of infection per contact{" "}
+          <output class="rec-chance-output" for={`${id}-chance`}>6</output>%
+        </label>
+        <input
+          class="rec-range rec-chance-input"
+          type="range"
+          id={`${id}-chance`}
+          min="1"
+          max="30"
+          step="1"
+          value="6"
+        />
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .rec-widget {
+    margin-block: var(--space-3);
+  }
+
+  .rec-case-label {
+    margin: 0 0 var(--space-2);
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .rec-canvas-wrap {
+    display: flex;
+    justify-content: center;
+    margin-block-end: var(--space-3);
+  }
+
+  .rec-canvas {
+    width: 100%;
+    max-width: 26rem;
+    height: auto;
+    background: #000;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .rec-pause-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-block-end: var(--space-3);
+  }
+
+  .rec-quarantine {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .rec-badge {
+    margin: 0;
+    padding: 0.3rem 0.85rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  .rec-tabs {
+    display: flex;
+    overflow: hidden;
+    margin-block-end: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+  }
+
+  .rec-tab {
+    flex: 1;
+    overflow: hidden;
+    padding: var(--space-2) var(--space-3);
+    background: var(--surface);
+    color: var(--muted);
+    border: none;
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+  }
+
+  .rec-tab[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--accent-fg);
+  }
+
+  .rec-chart-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+    margin-block-end: var(--space-3);
+  }
+
+  .rec-chart {
+    flex: 1 1 16rem;
+    min-width: 0;
+    max-width: 22rem;
+    height: auto;
+    margin-inline: 0;
+  }
+
+  .rec-grid {
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+
+  .rec-axis {
+    stroke: var(--muted);
+    stroke-width: 1;
+  }
+
+  .rec-axis-label {
+    fill: var(--muted);
+    font-size: 8px;
+  }
+
+  .rec-legend {
+    display: flex;
+    flex: 1 1 10rem;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-weight: 700;
+  }
+
+  .rec-legend li {
+    display: flex;
+    align-items: center;
+  }
+
+  .rec-swatch-s {
+    background: #38bdf8;
+  }
+
+  .rec-swatch-i {
+    background: #fb7159;
+  }
+
+  .rec-swatch-r {
+    background: #94a3b8;
+  }
+
+  .rec-band-s {
+    fill: #38bdf8;
+  }
+
+  .rec-band-i {
+    fill: #fb7159;
+  }
+
+  .rec-band-r {
+    fill: #94a3b8;
+  }
+
+  .rec-slider {
+    margin-block-end: var(--space-3);
+  }
+
+  .rec-slider label {
+    display: block;
+    margin-block-end: var(--space-2);
+    font-weight: 600;
+  }
+
+  .rec-slider output {
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .rec-range {
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    appearance: none;
+    outline: none;
+  }
+
+  .rec-range::-webkit-slider-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .rec-range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .rec-range::-moz-range-track {
+    height: 2px;
+    background: var(--border);
+  }
+
+  @media (width <= 640px) {
+    .rec-tab {
+      padding-inline: var(--space-2);
+      font-size: 0.62rem;
+      letter-spacing: 0.01em;
+    }
+  }
+</style>
