@@ -17,8 +17,8 @@ interface Particle {
   isolated: boolean;
 }
 
-const WIDTH = 640;
-const HEIGHT = 420;
+const WIDTH = 800;
+const HEIGHT = 500;
 const PARTICLE_RADIUS = 4;
 const BASE_SPEED = 1.2;
 const FRAMES_PER_DAY = 60;
@@ -36,7 +36,7 @@ const DEFAULT_RADIUS = 8;
 const DEFAULT_CHANCE = 0.06;
 const DEFAULT_MASK_EFFECTIVENESS = 0.5;
 
-const ISOLATION_ZONE = { x0: WIDTH - 150, y0: HEIGHT - 110, x1: WIDTH - 10, y1: HEIGHT - 10 };
+const ISOLATION_ZONE = { x0: WIDTH - 180, y0: HEIGHT - 130, x1: WIDTH - 10, y1: HEIGHT - 10 };
 const ISOLATION_COLS = 5;
 const ISOLATION_ROWS = 6;
 
@@ -46,10 +46,10 @@ const MODE_LABELS: Record<Mode, string> = {
   communities: "Communities case",
 };
 
-const CHART_X0 = 40;
-const CHART_X1 = 310;
+const CHART_X0 = 50;
+const CHART_X1 = 390;
 const CHART_Y0 = 10;
-const CHART_Y1 = 130;
+const CHART_Y1 = 160;
 
 function mulberry32(seed: number): () => number {
   let state = seed;
@@ -388,6 +388,14 @@ function renderChart(svg: SVGSVGElement, history: Counts[]): void {
   bandR.setAttribute("points", `${baseline} ${[...rTop].reverse().join(" ")}`);
   bandI.setAttribute("points", `${rTop.join(" ")} ${[...iTop].reverse().join(" ")}`);
   bandS.setAttribute("points", `${iTop.join(" ")} ${[...sTop].reverse().join(" ")}`);
+
+  const totalDays = ((history.length - 1) * CHART_SAMPLE_EVERY) / FRAMES_PER_DAY;
+  const xticks = svg.querySelectorAll<SVGTextElement>(".rec-xtick");
+  const fractions = [0, 0.25, 0.5, 0.75, 1];
+  xticks.forEach((tick, idx) => {
+    const frac = fractions[idx] ?? 0;
+    tick.textContent = `Day ${Math.round(frac * totalDays)}`;
+  });
 }
 
 export interface ParticleWidgetOptions {
