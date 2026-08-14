@@ -76,10 +76,9 @@ a:visited {
 
 .toc {
   position: fixed;
-  top: 50%;
+  top: calc(var(--space-3) + 3.25rem);
   right: var(--space-3);
   z-index: 20;
-  transform: translateY(-50%);
 }
 
 .toc details {
