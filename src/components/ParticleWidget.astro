@@ -1,25 +1,62 @@
 ---
+type SliderKind =
+  | "radius"
+  | "chance"
+  | "infectiousPeriod"
+  | "betaGamma"
+  | "travel"
+  | "mask"
+  | "vaccination";
+
+const SLIDER_ORDER: SliderKind[] = [
+  "radius",
+  "chance",
+  "infectiousPeriod",
+  "betaGamma",
+  "travel",
+  "mask",
+  "vaccination",
+];
+
 interface Props {
   id: string;
   mode: "simple" | "central" | "communities";
   showChart?: boolean;
-  showSliders?: boolean;
+  sliders?: SliderKind[];
   showQuarantineCheckbox?: boolean;
   showModeTabs?: boolean;
   badge?: string;
   ariaLabel?: string;
+  radiusDefault?: number;
+  chanceDefault?: number;
+  periodDefault?: number;
+  travelDefault?: number;
+  maskDefault?: number;
+  vaccinationDefault?: number;
+  betaDefault?: number;
+  gammaDefault?: number;
 }
 
 const {
   id,
   mode,
   showChart = true,
-  showSliders = false,
+  sliders = [],
   showQuarantineCheckbox = false,
   showModeTabs = false,
   badge,
   ariaLabel = "Bouncing-particle epidemic simulation",
+  radiusDefault = 8,
+  chanceDefault = 6,
+  periodDefault = 4,
+  travelDefault = 0.1,
+  maskDefault = 50,
+  vaccinationDefault = 30,
+  betaDefault = 0.35,
+  gammaDefault = 0.15,
 } = Astro.props;
+
+const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
 ---
 
 <div class="rec-widget" id={`${id}-widget`} data-initial-mode={mode}>
@@ -127,41 +164,182 @@ const {
   }
 
   {
-    showSliders && (
-      <div class="rec-slider">
-        <label for={`${id}-radius`}>
-          Infection radius <output class="rec-radius-output" for={`${id}-radius`}>8</output>px
-        </label>
-        <input
-          class="rec-range rec-radius-input"
-          type="range"
-          id={`${id}-radius`}
-          min="4"
-          max="20"
-          step="1"
-          value="8"
-        />
-      </div>
-    )
-  }
-  {
-    showSliders && (
-      <div class="rec-slider">
-        <label for={`${id}-chance`}>
-          Chance of infection per contact{" "}
-          <output class="rec-chance-output" for={`${id}-chance`}>6</output>%
-        </label>
-        <input
-          class="rec-range rec-chance-input"
-          type="range"
-          id={`${id}-chance`}
-          min="1"
-          max="30"
-          step="1"
-          value="6"
-        />
-      </div>
-    )
+    orderedSliders.map((kind) => {
+      if (kind === "radius") {
+        return (
+          <div class="rec-slider">
+            <label for={`${id}-radius`}>
+              Infection radius{" "}
+              <output class="rec-radius-output" for={`${id}-radius`}>
+                {radiusDefault}
+              </output>
+              px
+            </label>
+            <input
+              class="rec-range rec-radius-input"
+              type="range"
+              id={`${id}-radius`}
+              min="4"
+              max="20"
+              step="1"
+              value={radiusDefault}
+            />
+          </div>
+        );
+      }
+      if (kind === "chance") {
+        return (
+          <div class="rec-slider">
+            <label for={`${id}-chance`}>
+              Chance of infection per contact{" "}
+              <output class="rec-chance-output" for={`${id}-chance`}>
+                {chanceDefault}
+              </output>
+              %
+            </label>
+            <input
+              class="rec-range rec-chance-input"
+              type="range"
+              id={`${id}-chance`}
+              min="1"
+              max="30"
+              step="1"
+              value={chanceDefault}
+            />
+          </div>
+        );
+      }
+      if (kind === "infectiousPeriod") {
+        return (
+          <div class="rec-slider">
+            <label for={`${id}-period`}>
+              Infectious period{" "}
+              <output class="rec-period-output" for={`${id}-period`}>
+                {periodDefault}
+              </output>{" "}
+              days
+            </label>
+            <input
+              class="rec-range rec-period-input"
+              type="range"
+              id={`${id}-period`}
+              min="2"
+              max="20"
+              step="1"
+              value={periodDefault}
+            />
+          </div>
+        );
+      }
+      if (kind === "betaGamma") {
+        return (
+          <div class="rec-slider rec-beta-gamma">
+            <label for={`${id}-beta`}>β — transmission rate</label>
+            <input
+              class="rec-range rec-beta-input"
+              type="range"
+              id={`${id}-beta`}
+              min="0.05"
+              max="0.6"
+              step="0.01"
+              value={betaDefault}
+            />
+            <label for={`${id}-gamma`}>γ — recovery rate</label>
+            <input
+              class="rec-range rec-gamma-input"
+              type="range"
+              id={`${id}-gamma`}
+              min="0.03"
+              max="0.5"
+              step="0.01"
+              value={gammaDefault}
+            />
+            <p class="r0-formula">
+              R0 = β / γ ={" "}
+              <output class="rec-beta-output" for={`${id}-beta`}>
+                {betaDefault.toFixed(2)}
+              </output>{" "}
+              /{" "}
+              <output class="rec-gamma-output" for={`${id}-gamma`}>
+                {gammaDefault.toFixed(2)}
+              </output>{" "}
+              ={" "}
+              <output class="rec-r0-value" for={`${id}-beta ${id}-gamma`}>
+                {(betaDefault / gammaDefault).toFixed(2)}
+              </output>
+            </p>
+          </div>
+        );
+      }
+      if (kind === "travel") {
+        return (
+          <div class="rec-slider">
+            <label for={`${id}-travel`}>
+              Travel between communities{" "}
+              <output class="rec-travel-output" for={`${id}-travel`}>
+                {travelDefault}
+              </output>
+              %
+            </label>
+            <input
+              class="rec-range rec-travel-input"
+              type="range"
+              id={`${id}-travel`}
+              min="0"
+              max="5"
+              step="0.1"
+              value={travelDefault}
+            />
+          </div>
+        );
+      }
+      if (kind === "mask") {
+        return (
+          <div class="rec-slider">
+            <label for={`${id}-mask`}>
+              Wearing masks{" "}
+              <output class="rec-mask-output" for={`${id}-mask`}>
+                {maskDefault}
+              </output>
+              %
+            </label>
+            <input
+              class="rec-range rec-mask-input"
+              type="range"
+              id={`${id}-mask`}
+              min="0"
+              max="100"
+              step="5"
+              value={maskDefault}
+            />
+            <p class="rec-mask-callout">
+              Unmasked: about <output class="rec-mask-callout-unmasked">–</output>% chance per
+              contact · masked: about <output class="rec-mask-callout-masked">–</output>%
+            </p>
+          </div>
+        );
+      }
+      return (
+        <div class="rec-slider">
+          <label for={`${id}-vaccination`}>
+            Vaccinated at the start{" "}
+            <output class="rec-vaccination-output" for={`${id}-vaccination`}>
+              {vaccinationDefault}
+            </output>
+            %
+          </label>
+          <input
+            class="rec-range rec-vaccination-input"
+            type="range"
+            id={`${id}-vaccination`}
+            min="0"
+            max="100"
+            step="5"
+            value={vaccinationDefault}
+          />
+        </div>
+      );
+    })
   }
 </div>
 
@@ -335,6 +513,30 @@ const {
   .rec-slider output {
     font-weight: 400;
     color: var(--muted);
+  }
+
+  .rec-beta-gamma label:not(:first-child) {
+    margin-block-start: var(--space-3);
+  }
+
+  .r0-formula {
+    margin: var(--space-2) 0 0;
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-weight: 600;
+  }
+
+  .r0-formula .rec-r0-value {
+    color: var(--accent);
+    font-weight: 800;
+  }
+
+  .rec-mask-callout {
+    margin: var(--space-2) 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
   }
 
   .rec-range {
