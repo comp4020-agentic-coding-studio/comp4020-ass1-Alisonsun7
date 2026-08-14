@@ -187,15 +187,24 @@ function isolationSlotPosition(index: number): { x: number; y: number } {
 }
 
 // Repels a particle from the isolation zone instead of containing it, the
-// inverse of bounceWithinBox: a small gap in the top edge lets a fraction of
-// crossings through (ISOLATION_ENTRY_CHANCE) so the barrier reads as mostly,
-// not perfectly, effective.
+// inverse of bounceWithinBox — but only against particles trying to enter.
+// A particle already inside (e.g. one that was isolated there and has since
+// recovered) always leaves freely: only a fresh crossing from outside rolls
+// ISOLATION_ENTRY_CHANCE, so the barrier reads as mostly, not perfectly,
+// effective in both directions.
 function blockIsolationZone(
   p: Particle,
   prevX: number,
   prevY: number,
   rng: () => number,
 ): void {
+  const wasInside =
+    prevX > ISOLATION_ZONE.x0 &&
+    prevX < ISOLATION_ZONE.x1 &&
+    prevY > ISOLATION_ZONE.y0 &&
+    prevY < ISOLATION_ZONE.y1;
+  if (wasInside) return;
+
   const insideNow =
     p.x > ISOLATION_ZONE.x0 &&
     p.x < ISOLATION_ZONE.x1 &&
@@ -203,10 +212,7 @@ function blockIsolationZone(
     p.y < ISOLATION_ZONE.y1;
   if (!insideNow) return;
 
-  const gapX0 = (ISOLATION_ZONE.x0 + ISOLATION_ZONE.x1) / 2 - ISOLATION_GAP / 2;
-  const gapX1 = gapX0 + ISOLATION_GAP;
-  const crossedTopThroughGap = prevY <= ISOLATION_ZONE.y0 && p.x > gapX0 && p.x < gapX1;
-  if (crossedTopThroughGap && rng() < ISOLATION_ENTRY_CHANCE) return;
+  if (rng() < ISOLATION_ENTRY_CHANCE) return;
 
   if (prevX <= ISOLATION_ZONE.x0 || prevX >= ISOLATION_ZONE.x1) {
     p.x = prevX;
