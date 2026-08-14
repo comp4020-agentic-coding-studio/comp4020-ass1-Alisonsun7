@@ -13,17 +13,20 @@ interface Particle {
   home: { x: number; y: number };
   community: number;
   target: { x: number; y: number } | null;
+  masked: boolean;
+  isolated: boolean;
 }
 
 const WIDTH = 640;
 const HEIGHT = 420;
 const PARTICLE_RADIUS = 4;
 const BASE_SPEED = 1.2;
-const RECOVERY_FRAMES = 260;
+const FRAMES_PER_DAY = 60;
+const DEFAULT_RECOVERY_FRAMES = 240;
 const COMMUNITY_COLUMNS = 2;
 const COMMUNITY_ROWS = 2;
 const COMMUNITY_COUNT = COMMUNITY_COLUMNS * COMMUNITY_ROWS;
-const COMMUNITY_TRAVEL_CHANCE = 0.001;
+const DEFAULT_COMMUNITY_TRAVEL_CHANCE = 0.001;
 const CENTRAL_TRIP_CHANCE = 0.01;
 const CHART_SAMPLE_EVERY = 6;
 const HISTORY_SAFETY_CAP = 20_000;
@@ -31,6 +34,11 @@ const DEFAULT_PARTICLE_COUNT = 150;
 const DEFAULT_SEED = 913_517_243;
 const DEFAULT_RADIUS = 8;
 const DEFAULT_CHANCE = 0.06;
+const DEFAULT_MASK_EFFECTIVENESS = 0.5;
+
+const ISOLATION_ZONE = { x0: WIDTH - 150, y0: HEIGHT - 110, x1: WIDTH - 10, y1: HEIGHT - 10 };
+const ISOLATION_COLS = 5;
+const ISOLATION_ROWS = 6;
 
 const MODE_LABELS: Record<Mode, string> = {
   simple: "Simple case",
@@ -93,7 +101,20 @@ function randomVelocity(rng: () => number): { vx: number; vy: number } {
   return { vx: Math.cos(angle) * BASE_SPEED, vy: Math.sin(angle) * BASE_SPEED };
 }
 
-function createParticles(mode: Mode, rng: () => number, particleCount: number): Particle[] {
+// Computes the standard SIR basic reproduction number. Transmission rate over
+// recovery rate — NOT the inverse — so that a bigger beta or a smaller gamma
+// both correctly push R0 up.
+export function computeR0(beta: number, gamma: number): number {
+  return beta / gamma;
+}
+
+function createParticles(
+  mode: Mode,
+  rng: () => number,
+  particleCount: number,
+  maskRate: number,
+  vaccinationRate: number,
+): Particle[] {
   const particles: Particle[] = [];
   for (let i = 0; i < particleCount; i++) {
     const community = i % COMMUNITY_COUNT;
@@ -112,7 +133,15 @@ function createParticles(mode: Mode, rng: () => number, particleCount: number): 
       home: { x, y },
       community,
       target: null,
+      masked: rng() < maskRate,
+      isolated: false,
     });
+  }
+  // Vaccinate everyone except whoever becomes patient zero below, so a
+  // vaccinated room visibly starts with some particles already grey.
+  for (let i = 1; i < particles.length; i++) {
+    const p = particles[i];
+    if (p && rng() < vaccinationRate) p.state = "R";
   }
   const patientZero = particles[0];
   if (!patientZero) throw new Error("expected at least one particle");
@@ -127,14 +156,38 @@ function distanceBelow(ax: number, ay: number, bx: number, by: number, limit: nu
   return dx * dx + dy * dy < limit * limit;
 }
 
+function isolationSlotPosition(index: number): { x: number; y: number } {
+  const cellW = (ISOLATION_ZONE.x1 - ISOLATION_ZONE.x0) / ISOLATION_COLS;
+  const cellH = (ISOLATION_ZONE.y1 - ISOLATION_ZONE.y0) / ISOLATION_ROWS;
+  const slot = index % (ISOLATION_COLS * ISOLATION_ROWS);
+  const col = slot % ISOLATION_COLS;
+  const row = Math.floor(slot / ISOLATION_COLS);
+  return {
+    x: ISOLATION_ZONE.x0 + cellW * (col + 0.5),
+    y: ISOLATION_ZONE.y0 + cellH * (row + 0.5),
+  };
+}
+
 interface StepOptions {
   mode: Mode;
   quarantine: boolean;
   rng: () => number;
+  communityTravelChance: number;
+  isolationCounter: { value: number };
 }
 
 function stepParticle(p: Particle, opts: StepOptions): void {
-  if (p.state === "I" && opts.quarantine) return;
+  if (p.state === "I" && opts.quarantine) {
+    if (!p.isolated) {
+      p.isolated = true;
+      const slot = isolationSlotPosition(opts.isolationCounter.value++);
+      p.x = slot.x;
+      p.y = slot.y;
+      p.vx = 0;
+      p.vy = 0;
+    }
+    return;
+  }
 
   if (opts.mode === "central") {
     const center = { x: WIDTH / 2, y: HEIGHT / 2 };
@@ -152,7 +205,7 @@ function stepParticle(p: Particle, opts: StepOptions): void {
   }
 
   if (opts.mode === "communities") {
-    if (opts.rng() < COMMUNITY_TRAVEL_CHANCE) {
+    if (opts.rng() < opts.communityTravelChance) {
       p.community = Math.floor(opts.rng() * COMMUNITY_COUNT);
     }
     if (opts.rng() < 0.02) {
@@ -180,19 +233,23 @@ function updateInfections(
   particles: Particle[],
   infectionRadius: number,
   infectionChance: number,
+  maskEffectiveness: number,
+  recoveryFrames: number,
   frame: number,
   rng: () => number,
 ): void {
   for (const p of particles) {
     if (p.state !== "I") continue;
-    if (frame - p.infectedAtFrame > RECOVERY_FRAMES) {
+    if (frame - p.infectedAtFrame > recoveryFrames) {
       p.state = "R";
+      p.isolated = false;
       continue;
     }
     for (const other of particles) {
       if (other.state !== "S") continue;
       if (!distanceBelow(p.x, p.y, other.x, other.y, infectionRadius)) continue;
-      if (rng() < infectionChance) {
+      const chance = other.masked ? infectionChance * (1 - maskEffectiveness) : infectionChance;
+      if (rng() < chance) {
         other.state = "I";
         other.infectedAtFrame = frame;
       }
@@ -219,15 +276,62 @@ function drawCommunityDividers(ctx: CanvasRenderingContext2D): void {
   ctx.restore();
 }
 
-function draw(ctx: CanvasRenderingContext2D, particles: Particle[], mode: Mode): void {
+function drawIsolationZone(ctx: CanvasRenderingContext2D): void {
+  ctx.save();
+  ctx.strokeStyle = "rgba(226, 232, 240, 0.7)";
+  ctx.setLineDash([6, 4]);
+  ctx.lineWidth = 2;
+  ctx.strokeRect(
+    ISOLATION_ZONE.x0,
+    ISOLATION_ZONE.y0,
+    ISOLATION_ZONE.x1 - ISOLATION_ZONE.x0,
+    ISOLATION_ZONE.y1 - ISOLATION_ZONE.y0,
+  );
+  ctx.setLineDash([]);
+  ctx.fillStyle = "rgba(226, 232, 240, 0.9)";
+  ctx.font = "11px system-ui, sans-serif";
+  ctx.fillText("Isolation zone", ISOLATION_ZONE.x0, ISOLATION_ZONE.y0 - 6);
+  ctx.restore();
+}
+
+interface DrawOptions {
+  mode: Mode;
+  quarantine: boolean;
+  showRadiusHalo: boolean;
+  infectionRadius: number;
+}
+
+function draw(ctx: CanvasRenderingContext2D, particles: Particle[], opts: DrawOptions): void {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  if (mode === "communities") drawCommunityDividers(ctx);
+  if (opts.mode === "communities") drawCommunityDividers(ctx);
+  if (opts.quarantine) drawIsolationZone(ctx);
+
+  if (opts.showRadiusHalo) {
+    for (const p of particles) {
+      if (p.state !== "I") continue;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, opts.infectionRadius, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(251, 113, 89, 0.12)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(251, 113, 89, 0.4)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+
   for (const p of particles) {
     ctx.beginPath();
     ctx.arc(p.x, p.y, PARTICLE_RADIUS, 0, Math.PI * 2);
     ctx.fillStyle = p.state === "S" ? "#38bdf8" : p.state === "I" ? "#fb7159" : "#94a3b8";
     ctx.fill();
+    if (p.state === "S" && p.masked) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, PARTICLE_RADIUS + 2, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
   }
 }
 
@@ -291,6 +395,12 @@ export interface ParticleWidgetOptions {
   quarantine?: boolean;
   infectionRadius?: number;
   infectionChance?: number;
+  recoveryFrames?: number;
+  communityTravelChance?: number;
+  maskRate?: number;
+  maskEffectiveness?: number;
+  vaccinationRate?: number;
+  showRadiusHalo?: boolean;
   particleCount?: number;
   seed?: number;
   chart?: SVGSVGElement | null;
@@ -306,6 +416,10 @@ export interface ParticleWidget {
   setQuarantine(value: boolean): void;
   setInfectionRadius(value: number): void;
   setInfectionChance(value: number): void;
+  setRecoveryFrames(value: number): void;
+  setCommunityTravelChance(value: number): void;
+  setMaskRate(value: number): void;
+  setVaccinationRate(value: number): void;
   pause(): void;
   resume(): void;
   togglePause(): boolean;
@@ -315,9 +429,9 @@ export interface ParticleWidget {
 }
 
 // One independently-configured, independently-animated instance: the page
-// creates several of these concurrently (a plain demo, a side-by-side
-// quarantine comparison, the full capstone sandbox) rather than driving one
-// global singleton.
+// creates many of these concurrently (plain demos, a side-by-side quarantine
+// comparison, the full capstone sandbox) rather than driving one global
+// singleton.
 export function createParticleWidget(
   canvas: HTMLCanvasElement,
   opts: ParticleWidgetOptions,
@@ -330,43 +444,65 @@ export function createParticleWidget(
   let quarantine = opts.quarantine ?? false;
   let infectionRadius = opts.infectionRadius ?? DEFAULT_RADIUS;
   let infectionChance = opts.infectionChance ?? DEFAULT_CHANCE;
+  let recoveryFrames = opts.recoveryFrames ?? DEFAULT_RECOVERY_FRAMES;
+  let communityTravelChance = opts.communityTravelChance ?? DEFAULT_COMMUNITY_TRAVEL_CHANCE;
+  let maskRate = opts.maskRate ?? 0;
+  const maskEffectiveness = opts.maskEffectiveness ?? DEFAULT_MASK_EFFECTIVENESS;
+  let vaccinationRate = opts.vaccinationRate ?? 0;
+  const showRadiusHalo = opts.showRadiusHalo ?? false;
   const particleCount = opts.particleCount ?? DEFAULT_PARTICLE_COUNT;
   const seed = opts.seed ?? DEFAULT_SEED;
 
   let rng = mulberry32(seed);
-  let particles = createParticles(mode, rng, particleCount);
+  let particles = createParticles(mode, rng, particleCount, maskRate, vaccinationRate);
   let frame = 0;
   let paused = false;
   let history: Counts[] = [];
   let animationHandle = 0;
   let resetCount = 0;
+  let isolationCounter = { value: 0 };
 
   function updateReadouts(counts: Counts): void {
     const total = counts.s + counts.i + counts.r;
     if (opts.pctR) opts.pctR.textContent = ((counts.r / total) * 100).toFixed(1);
     if (opts.pctS) opts.pctS.textContent = ((counts.s / total) * 100).toFixed(1);
     if (opts.pctI) opts.pctI.textContent = ((counts.i / total) * 100).toFixed(1);
-    if (opts.dayLabel) opts.dayLabel.textContent = `Day ${Math.floor(frame / 60)}`;
+    if (opts.dayLabel) opts.dayLabel.textContent = `Day ${Math.floor(frame / FRAMES_PER_DAY)}`;
   }
 
   function reset(): void {
     resetCount += 1;
     rng = mulberry32(seed + resetCount);
-    particles = createParticles(mode, rng, particleCount);
+    particles = createParticles(mode, rng, particleCount, maskRate, vaccinationRate);
     frame = 0;
     history = [];
+    isolationCounter = { value: 0 };
     if (opts.caseLabel) opts.caseLabel.textContent = MODE_LABELS[mode];
     const counts = countStates(particles);
     updateReadouts(counts);
-    draw(ctx, particles, mode);
+    draw(ctx, particles, { mode, quarantine, showRadiusHalo, infectionRadius });
     if (opts.chart) renderChart(opts.chart, history);
   }
 
   function tick(): void {
     if (!paused) {
-      const stepOpts: StepOptions = { mode, quarantine, rng };
+      const stepOpts: StepOptions = {
+        mode,
+        quarantine,
+        rng,
+        communityTravelChance,
+        isolationCounter,
+      };
       for (const p of particles) stepParticle(p, stepOpts);
-      updateInfections(particles, infectionRadius, infectionChance, frame, rng);
+      updateInfections(
+        particles,
+        infectionRadius,
+        infectionChance,
+        maskEffectiveness,
+        recoveryFrames,
+        frame,
+        rng,
+      );
       frame++;
 
       if (frame % CHART_SAMPLE_EVERY === 0) {
@@ -377,13 +513,13 @@ export function createParticleWidget(
         if (opts.chart) renderChart(opts.chart, history);
       }
     }
-    draw(ctx, particles, mode);
+    draw(ctx, particles, { mode, quarantine, showRadiusHalo, infectionRadius });
     animationHandle = requestAnimationFrame(tick);
   }
 
   if (opts.caseLabel) opts.caseLabel.textContent = MODE_LABELS[mode];
   updateReadouts(countStates(particles));
-  draw(ctx, particles, mode);
+  draw(ctx, particles, { mode, quarantine, showRadiusHalo, infectionRadius });
   animationHandle = requestAnimationFrame(tick);
 
   return {
@@ -399,6 +535,20 @@ export function createParticleWidget(
     },
     setInfectionChance(value) {
       infectionChance = value;
+    },
+    setRecoveryFrames(value) {
+      recoveryFrames = value;
+    },
+    setCommunityTravelChance(value) {
+      communityTravelChance = value;
+    },
+    setMaskRate(value) {
+      maskRate = value;
+      for (const p of particles) p.masked = Math.random() < value;
+    },
+    setVaccinationRate(value) {
+      vaccinationRate = value;
+      reset();
     },
     pause() {
       paused = true;
@@ -427,6 +577,12 @@ interface StandardWidgetOptions {
   particleCount?: number;
   infectionRadius?: number;
   infectionChance?: number;
+  recoveryFrames?: number;
+  communityTravelChance?: number;
+  maskRate?: number;
+  maskEffectiveness?: number;
+  vaccinationRate?: number;
+  showRadiusHalo?: boolean;
 }
 
 // Wires up one <ParticleWidget> markup instance: pause/reset always; sliders,
@@ -448,6 +604,21 @@ function setupStandardWidget(prefix: string, engineOpts: StandardWidgetOptions):
   const radiusOutput = container.querySelector<HTMLElement>(".rec-radius-output");
   const chanceSlider = container.querySelector<HTMLInputElement>(".rec-chance-input");
   const chanceOutput = container.querySelector<HTMLElement>(".rec-chance-output");
+  const periodSlider = container.querySelector<HTMLInputElement>(".rec-period-input");
+  const periodOutput = container.querySelector<HTMLElement>(".rec-period-output");
+  const travelSlider = container.querySelector<HTMLInputElement>(".rec-travel-input");
+  const travelOutput = container.querySelector<HTMLElement>(".rec-travel-output");
+  const maskSlider = container.querySelector<HTMLInputElement>(".rec-mask-input");
+  const maskOutput = container.querySelector<HTMLElement>(".rec-mask-output");
+  const maskUnmaskedCallout = container.querySelector<HTMLElement>(".rec-mask-callout-unmasked");
+  const maskMaskedCallout = container.querySelector<HTMLElement>(".rec-mask-callout-masked");
+  const vaccinationSlider = container.querySelector<HTMLInputElement>(".rec-vaccination-input");
+  const vaccinationOutput = container.querySelector<HTMLElement>(".rec-vaccination-output");
+  const betaSlider = container.querySelector<HTMLInputElement>(".rec-beta-input");
+  const betaOutput = container.querySelector<HTMLElement>(".rec-beta-output");
+  const gammaSlider = container.querySelector<HTMLInputElement>(".rec-gamma-input");
+  const gammaOutput = container.querySelector<HTMLElement>(".rec-gamma-output");
+  const r0Output = container.querySelector<HTMLElement>(".rec-r0-value");
   const quarantineCheckbox = container.querySelector<HTMLInputElement>(".rec-quarantine-input");
   const modeButtons = Array.from(container.querySelectorAll<HTMLButtonElement>("[data-rec-mode]"));
 
@@ -456,6 +627,12 @@ function setupStandardWidget(prefix: string, engineOpts: StandardWidgetOptions):
     quarantine: engineOpts.quarantine,
     infectionRadius: engineOpts.infectionRadius,
     infectionChance: engineOpts.infectionChance,
+    recoveryFrames: engineOpts.recoveryFrames,
+    communityTravelChance: engineOpts.communityTravelChance,
+    maskRate: engineOpts.maskRate,
+    maskEffectiveness: engineOpts.maskEffectiveness,
+    vaccinationRate: engineOpts.vaccinationRate,
+    showRadiusHalo: engineOpts.showRadiusHalo,
     particleCount: engineOpts.particleCount,
     seed: engineOpts.seed,
     chart,
@@ -486,6 +663,49 @@ function setupStandardWidget(prefix: string, engineOpts: StandardWidgetOptions):
       chanceOutput.textContent = chanceSlider.value;
       widget.setInfectionChance(Number(chanceSlider.value) / 100);
     });
+  }
+  if (periodSlider && periodOutput) {
+    periodSlider.addEventListener("input", () => {
+      periodOutput.textContent = periodSlider.value;
+      widget.setRecoveryFrames(Number(periodSlider.value) * FRAMES_PER_DAY);
+    });
+  }
+  if (travelSlider && travelOutput) {
+    travelSlider.addEventListener("input", () => {
+      travelOutput.textContent = travelSlider.value;
+      widget.setCommunityTravelChance(Number(travelSlider.value) / 100);
+    });
+  }
+  if (maskSlider && maskOutput) {
+    const effectiveness = engineOpts.maskEffectiveness ?? DEFAULT_MASK_EFFECTIVENESS;
+    const unmaskedChance = engineOpts.infectionChance ?? DEFAULT_CHANCE;
+    if (maskUnmaskedCallout) maskUnmaskedCallout.textContent = (unmaskedChance * 100).toFixed(0);
+    if (maskMaskedCallout) {
+      maskMaskedCallout.textContent = (unmaskedChance * (1 - effectiveness) * 100).toFixed(0);
+    }
+    maskSlider.addEventListener("input", () => {
+      maskOutput.textContent = maskSlider.value;
+      widget.setMaskRate(Number(maskSlider.value) / 100);
+    });
+  }
+  if (vaccinationSlider && vaccinationOutput) {
+    vaccinationSlider.addEventListener("input", () => {
+      vaccinationOutput.textContent = vaccinationSlider.value;
+      widget.setVaccinationRate(Number(vaccinationSlider.value) / 100);
+    });
+  }
+  if (betaSlider && betaOutput && gammaSlider && gammaOutput && r0Output) {
+    const updateBetaGamma = () => {
+      const beta = Number(betaSlider.value);
+      const gamma = Number(gammaSlider.value);
+      betaOutput.textContent = beta.toFixed(2);
+      gammaOutput.textContent = gamma.toFixed(2);
+      r0Output.textContent = computeR0(beta, gamma).toFixed(2);
+      widget.setInfectionChance(beta);
+      widget.setRecoveryFrames(Math.round(FRAMES_PER_DAY / gamma));
+    };
+    betaSlider.addEventListener("input", updateBetaGamma);
+    gammaSlider.addEventListener("input", updateBetaGamma);
   }
   if (quarantineCheckbox) {
     quarantineCheckbox.addEventListener("change", () => {
@@ -525,7 +745,7 @@ const DISEASE_PRESETS: Record<string, DiseasePreset> = {
 };
 
 function wireDiseasePresets(sandbox: ParticleWidget): void {
-  const sandboxContainer = must(document.getElementById("s9-widget"));
+  const sandboxContainer = must(document.getElementById("sandbox-widget"));
   const radiusSlider = must(sandboxContainer.querySelector<HTMLInputElement>(".rec-radius-input"));
   const radiusOutput = must(sandboxContainer.querySelector<HTMLElement>(".rec-radius-output"));
   const chanceSlider = must(sandboxContainer.querySelector<HTMLInputElement>(".rec-chance-input"));
@@ -611,30 +831,49 @@ function initToggleGroups(): void {
 const ISOLATION_SEED = 500_000_007;
 
 export function initEpidemicStory(): void {
-  setupStandardWidget("s2", { mode: "simple" });
-  setupStandardWidget("s3", { mode: "simple" });
-  setupStandardWidget("s4", { mode: "simple" });
+  // Dramatic, always-sweeps defaults: high beta, long-ish infectious period.
+  setupStandardWidget("simple", {
+    mode: "simple",
+    infectionChance: 0.35,
+    recoveryFrames: 600,
+  });
+  setupStandardWidget("measuring", {
+    mode: "simple",
+    infectionChance: 0.4,
+    recoveryFrames: 750,
+  });
 
-  const isolationOff = setupStandardWidget("s5a", {
+  setupStandardWidget("radius", { mode: "simple", showRadiusHalo: true, infectionChance: 0.22 });
+  setupStandardWidget("period", { mode: "simple", recoveryFrames: 240, infectionChance: 0.22 });
+  setupStandardWidget("chance", { mode: "simple", infectionChance: 0.15 });
+
+  const isolationOff = setupStandardWidget("isoa", {
     mode: "simple",
     quarantine: false,
     seed: ISOLATION_SEED,
   });
-  const isolationOn = setupStandardWidget("s5b", {
+  const isolationOn = setupStandardWidget("isob", {
     mode: "simple",
     quarantine: true,
     seed: ISOLATION_SEED,
   });
-  const resetBothButton = document.getElementById("s5-reset-both");
+  const resetBothButton = document.getElementById("isolation-reset-both");
   resetBothButton?.addEventListener("click", () => {
     isolationOff.reset();
     isolationOn.reset();
   });
 
-  setupStandardWidget("s6", { mode: "central" });
-  setupStandardWidget("s7", { mode: "communities" });
+  setupStandardWidget("hotspot", {
+    mode: "central",
+    infectionChance: 0.25,
+    recoveryFrames: 500,
+  });
+  setupStandardWidget("communities", { mode: "communities" });
+  setupStandardWidget("travel", { mode: "communities", communityTravelChance: 0.001 });
+  setupStandardWidget("masks", { mode: "simple", infectionChance: 0.15, maskRate: 0.5 });
+  setupStandardWidget("vaccination", { mode: "simple", infectionChance: 0.1, vaccinationRate: 0.3 });
 
-  const sandbox = setupStandardWidget("s9", { mode: "simple" });
+  const sandbox = setupStandardWidget("sandbox", { mode: "simple" });
   wireDiseasePresets(sandbox);
 
   initToggleGroups();
