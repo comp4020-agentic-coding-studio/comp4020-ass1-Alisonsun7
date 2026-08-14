@@ -10,75 +10,89 @@ const base = import.meta.env.BASE_URL;
   accent="violet"
   activePath={`${base}epidemic-simulation/`}
 >
-  <h1>Bouncing-dot epidemic simulation</h1>
-  <p class="lede">
-    This is a bonus page, not the graded submission — see <a href={`${base}epidemic-threshold/`}>Epidemic
-    threshold</a> for that. It's
-    an original, from-scratch build of the well-known "particles bounce around
-    and infect each other" style of epidemic visualisation that shows up in
-    explainer videos and web toys. Every line of code and text on this page
-    was written for this assignment.
+  <h1 class="rec-title">Epidemic simulation</h1>
+  <p class="lede rec-subtitle">
+    A bonus page, not the graded submission — see <a href={`${base}epidemic-threshold/`}>Epidemic
+    threshold</a> for that one. The narrative here is inspired by 3Blue1Brown's <em>"Simulating
+    an Epidemic"</em> video.
   </p>
 
   <section class="panel sim-recreation" aria-label="Particle simulation">
-    <div class="btn-row" role="tablist" aria-label="Simulation layout">
-      <button class="btn" type="button" data-rec-mode="simple" aria-pressed="true">Simple</button>
-      <button class="btn" type="button" data-rec-mode="central" aria-pressed="false">Central location</button>
-      <button class="btn" type="button" data-rec-mode="communities" aria-pressed="false">Communities</button>
-    </div>
+    <p class="rec-case-label" id="rec-case-label">Simple case</p>
 
     <div class="rec-canvas-wrap">
       <canvas id="rec-canvas" width="640" height="420" aria-label="Particle simulation canvas"></canvas>
     </div>
 
-    <p class="chart-legend">
-      <span class="swatch" style="background: #c8ccd6"></span>Susceptible
-      <span class="swatch" style="background: #e0455f"></span>Infected
-      <span class="swatch" style="background: #4d8dff"></span>Recovered
-    </p>
-
-    <div class="controls">
-      <div class="control">
-        <label for="rec-density">Population density <output id="rec-density-output">5</output></label>
-        <input type="range" id="rec-density" min="1" max="10" step="1" value="5" />
+    <div class="rec-pause-row">
+      <div class="btn-row">
+        <button class="btn" type="button" id="rec-pause">Pause</button>
+        <button class="btn" type="button" id="rec-reset">Reset</button>
       </div>
-      <div class="control">
-        <label for="rec-contact">Contact rate <output id="rec-contact-output">1.5</output></label>
-        <input type="range" id="rec-contact" min="0.5" max="4" step="0.1" value="1.5" />
-      </div>
-      <label class="rec-checkbox" for="rec-quarantine">
+      <p class="rec-note">
+        Watch how fast the outbreak spreads at the current settings, then adjust a
+        slider below and compare.
+      </p>
+      <label class="rec-quarantine" for="rec-quarantine">
         <input type="checkbox" id="rec-quarantine" />
         Quarantine
       </label>
     </div>
 
-    <div class="btn-row">
-      <button class="btn" type="button" id="rec-pause">Pause</button>
-      <button class="btn" type="button" id="rec-reset">Reset</button>
+    <div class="rec-tabs" role="tablist" aria-label="Simulation layout">
+      <button class="rec-tab" type="button" data-rec-mode="simple" aria-pressed="true">Simple</button>
+      <button class="rec-tab" type="button" data-rec-mode="central" aria-pressed="false">Central location</button>
+      <button class="rec-tab" type="button" data-rec-mode="communities" aria-pressed="false">Communities</button>
     </div>
 
-    <div class="stat-row">
-      <div class="stat"><span class="value" id="rec-day">0</span><span class="label">Day</span></div>
-      <div class="stat"><span class="value" id="rec-s">149</span><span class="label">Susceptible</span></div>
-      <div class="stat"><span class="value" id="rec-i">1</span><span class="label">Infected</span></div>
-      <div class="stat"><span class="value" id="rec-r">0</span><span class="label">Recovered</span></div>
+    <div class="rec-chart-row">
+      <svg class="growth-chart" id="rec-chart" viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet">
+        <line class="rec-grid" x1="40" y1="10" x2="310" y2="10"></line>
+        <line class="rec-grid" x1="40" y1="34" x2="310" y2="34"></line>
+        <line class="rec-grid" x1="40" y1="58" x2="310" y2="58"></line>
+        <line class="rec-grid" x1="40" y1="82" x2="310" y2="82"></line>
+        <line class="rec-grid" x1="40" y1="106" x2="310" y2="106"></line>
+        <line class="rec-axis" x1="40" y1="130" x2="310" y2="130"></line>
+        <text class="rec-axis-label" x="36" y="13">100</text>
+        <text class="rec-axis-label" x="36" y="37">80</text>
+        <text class="rec-axis-label" x="36" y="61">60</text>
+        <text class="rec-axis-label" x="36" y="85">40</text>
+        <text class="rec-axis-label" x="36" y="109">20</text>
+        <text class="rec-axis-label" x="36" y="133">0</text>
+        <text class="rec-axis-label" id="rec-chart-day" x="310" y="145" text-anchor="end">Day 0</text>
+        <polygon id="rec-band-s" points="40,130 310,130 310,130 40,130"></polygon>
+        <polygon id="rec-band-i" points="40,130 310,130 310,130 40,130"></polygon>
+        <polygon id="rec-band-r" points="40,130 310,130 310,130 40,130"></polygon>
+      </svg>
+
+      <ul class="rec-legend">
+        <li class="rec-legend-r"><span id="rec-pct-r">0.0</span>% recovered</li>
+        <li class="rec-legend-s"><span id="rec-pct-s">99.3</span>% susceptible</li>
+        <li class="rec-legend-i"><span id="rec-pct-i">0.7</span>% infected</li>
+      </ul>
     </div>
 
-    <svg class="growth-chart" id="rec-chart" viewBox="0 0 300 120" preserveAspectRatio="none">
-      <polygon id="rec-band-s" points="0,0 300,0 300,0 0,0"></polygon>
-      <polygon id="rec-band-i" points="0,120 300,120 300,120 0,120"></polygon>
-      <polygon id="rec-band-r" points="0,120 300,120 300,120 0,120"></polygon>
-    </svg>
+    <div class="rec-params-head">
+      <h2>Parameters</h2>
+      <p class="rec-note">Move a slider mid-run — the outbreak reacts immediately, no reset needed.</p>
+    </div>
+
+    <div class="rec-slider">
+      <label for="rec-radius">Infection radius <output id="rec-radius-output">8</output>px</label>
+      <input class="rec-range" type="range" id="rec-radius" min="4" max="20" step="1" value="8" />
+    </div>
+    <div class="rec-slider">
+      <label for="rec-chance">Chance of infection per contact <output id="rec-chance-output">6</output>%</label>
+      <input class="rec-range" type="range" id="rec-chance" min="1" max="30" step="1" value="6" />
+    </div>
   </section>
 
   <p class="explainer">
-    Design and interactions here are inspired by the wider genre of
-    bouncing-dot epidemic visualisations — including 3Blue1Brown's <em>"Simulating
-    an Epidemic"</em> video and various independent web demos
-    that popularised it — not copied from any single one of them. The engine
-    (particle movement, infection checks, the three layouts, quarantine) and
-    all of the wording above are original code and text written for this
-    assignment.
+    This layout closely follows the well-known bouncing-dot epidemic simulation
+    built by Prajwal Souza, and the narrative is inspired by 3Blue1Brown's <em>"Simulating
+    an Epidemic"</em> video. The particle engine, every line of layout code, and
+    all of the wording on this page were written from scratch for this
+    assignment — no code or text was copied from either source.
   </p>
 
   <script>
@@ -99,38 +113,219 @@ const base = import.meta.env.BASE_URL;
       color: var(--fg);
     }
 
+    .rec-title,
+    .rec-subtitle {
+      text-align: center;
+    }
+
+    .rec-case-label {
+      margin-block-end: var(--space-1);
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
     .rec-canvas-wrap {
       display: flex;
       justify-content: center;
-      margin-block: var(--space-3);
+      margin-block-end: var(--space-3);
     }
 
     #rec-canvas {
       width: 100%;
-      max-width: 40rem;
+      max-width: 30rem;
       height: auto;
       background: #000;
+      border: 1px solid var(--border);
       border-radius: var(--radius);
     }
 
-    .rec-checkbox {
+    .rec-pause-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-4);
+      margin-block-end: var(--space-4);
+    }
+
+    #rec-pause {
+      background: #38bdf8;
+      color: #06070c;
+    }
+
+    #rec-reset {
+      background: #94a3b8;
+      color: #06070c;
+    }
+
+    .rec-note {
+      max-width: 22rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .rec-quarantine {
       display: flex;
       align-items: center;
       gap: var(--space-2);
-      font-weight: 600;
+      margin-inline-start: auto;
+      color: #fb7159;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
       cursor: pointer;
     }
 
+    .rec-tabs {
+      display: flex;
+      overflow: hidden;
+      margin-block-end: var(--space-4);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+    }
+
+    .rec-tab {
+      flex: 1;
+      overflow: hidden;
+      padding: var(--space-2) var(--space-3);
+      background: #1a1c26;
+      color: var(--muted);
+      border: none;
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+    }
+
+    .rec-tab[aria-pressed="true"] {
+      background: #f5b942;
+      color: #06070c;
+    }
+
+    .rec-chart-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-4);
+      margin-block-end: var(--space-4);
+    }
+
+    .growth-chart {
+      flex: 1 1 20rem;
+      min-width: 0;
+      max-width: 26rem;
+      height: auto;
+    }
+
+    .rec-grid {
+      stroke: rgb(255 255 255 / 10%);
+      stroke-width: 1;
+    }
+
+    .rec-axis {
+      stroke: var(--border);
+      stroke-width: 1;
+    }
+
+    .rec-axis-label {
+      fill: var(--muted);
+      font-size: 8px;
+    }
+
+    .rec-legend {
+      display: flex;
+      flex: 1 1 12rem;
+      flex-direction: column;
+      gap: var(--space-2);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .rec-legend-r {
+      color: #94a3b8;
+    }
+
+    .rec-legend-s {
+      color: #38bdf8;
+    }
+
+    .rec-legend-i {
+      color: #fb7159;
+    }
+
+    .rec-params-head {
+      margin-block-end: var(--space-2);
+    }
+
+    .rec-slider {
+      margin-block-end: var(--space-3);
+    }
+
+    .rec-slider label {
+      display: block;
+      margin-block-end: var(--space-2);
+    }
+
+    .rec-range {
+      width: 100%;
+      height: 2px;
+      background: var(--border);
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+    }
+
+    .rec-range::-webkit-slider-thumb {
+      width: 16px;
+      height: 16px;
+      background: #fb7159;
+      border-radius: 50%;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+
+    .rec-range::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: #fb7159;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .rec-range::-moz-range-track {
+      height: 2px;
+      background: var(--border);
+    }
+
     #rec-band-s {
-      fill: #c8ccd6;
+      fill: #38bdf8;
     }
 
     #rec-band-i {
-      fill: #e0455f;
+      fill: #fb7159;
     }
 
     #rec-band-r {
-      fill: #4d8dff;
+      fill: #94a3b8;
+    }
+
+    @media (width <= 640px) {
+      .rec-quarantine {
+        margin-inline-start: 0;
+      }
+
+      .rec-tab {
+        padding-inline: var(--space-2);
+        font-size: 0.65rem;
+        letter-spacing: 0.02em;
+      }
     }
   </style>
 </BaseLayout>

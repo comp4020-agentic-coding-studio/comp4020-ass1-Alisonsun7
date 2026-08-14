@@ -20,8 +20,6 @@ const HEIGHT = 420;
 const PARTICLE_COUNT = 150;
 const PARTICLE_RADIUS = 4;
 const BASE_SPEED = 1.2;
-const INFECTION_RADIUS = 11;
-const BASE_INFECT_CHANCE = 0.015;
 const RECOVERY_FRAMES = 260;
 const COMMUNITY_COLUMNS = 2;
 const COMMUNITY_ROWS = 2;
@@ -32,6 +30,17 @@ const CHART_SAMPLE_EVERY = 6;
 const CHART_MAX_POINTS = 140;
 const SIM_SEED = 913_517_243;
 
+const MODE_LABELS: Record<Mode, string> = {
+  simple: "Simple case",
+  central: "Central location case",
+  communities: "Communities case",
+};
+
+const CHART_X0 = 40;
+const CHART_X1 = 310;
+const CHART_Y0 = 10;
+const CHART_Y1 = 130;
+
 function mulberry32(seed: number): () => number {
   let state = seed;
   return function rng(): number {
@@ -40,18 +49,6 @@ function mulberry32(seed: number): () => number {
     let t = Math.imul(state ^ (state >>> 15), 1 | state);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function densityBox(density: number): { x0: number; y0: number; x1: number; y1: number } {
-  const scale = 0.45 + (10 - density) * 0.055;
-  const w = WIDTH * scale;
-  const h = HEIGHT * scale;
-  return {
-    x0: (WIDTH - w) / 2,
-    y0: (HEIGHT - h) / 2,
-    x1: (WIDTH + w) / 2,
-    y1: (HEIGHT + h) / 2,
   };
 }
 
@@ -94,12 +91,11 @@ function randomVelocity(rng: () => number): { vx: number; vy: number } {
   return { vx: Math.cos(angle) * BASE_SPEED, vy: Math.sin(angle) * BASE_SPEED };
 }
 
-function createParticles(mode: Mode, density: number, rng: () => number): Particle[] {
+function createParticles(mode: Mode, rng: () => number): Particle[] {
   const particles: Particle[] = [];
-  const box = mode === "simple" ? densityBox(density) : null;
   for (let i = 0; i < PARTICLE_COUNT; i++) {
     const community = i % COMMUNITY_COUNT;
-    const spawnBox = mode === "communities" ? communityBox(community) : (box ?? { x0: 0, y0: 0, x1: WIDTH, y1: HEIGHT });
+    const spawnBox = mode === "communities" ? communityBox(community) : { x0: 0, y0: 0, x1: WIDTH, y1: HEIGHT };
     const x = spawnBox.x0 + rng() * (spawnBox.x1 - spawnBox.x0);
     const y = spawnBox.y0 + rng() * (spawnBox.y1 - spawnBox.y0);
     const { vx, vy } = randomVelocity(rng);
@@ -130,9 +126,7 @@ function distanceBelow(ax: number, ay: number, bx: number, by: number, limit: nu
 
 interface StepOptions {
   mode: Mode;
-  density: number;
   quarantine: boolean;
-  frame: number;
   rng: () => number;
 }
 
@@ -176,10 +170,16 @@ function stepParticle(p: Particle, opts: StepOptions): void {
   }
   p.x += p.vx;
   p.y += p.vy;
-  bounceWithinBox(p, densityBox(opts.density));
+  bounceWithinBox(p, { x0: 0, y0: 0, x1: WIDTH, y1: HEIGHT });
 }
 
-function updateInfections(particles: Particle[], contactRate: number, frame: number, rng: () => number): void {
+function updateInfections(
+  particles: Particle[],
+  infectionRadius: number,
+  infectionChance: number,
+  frame: number,
+  rng: () => number,
+): void {
   for (const p of particles) {
     if (p.state !== "I") continue;
     if (frame - p.infectedAtFrame > RECOVERY_FRAMES) {
@@ -188,8 +188,8 @@ function updateInfections(particles: Particle[], contactRate: number, frame: num
     }
     for (const other of particles) {
       if (other.state !== "S") continue;
-      if (!distanceBelow(p.x, p.y, other.x, other.y, INFECTION_RADIUS)) continue;
-      if (rng() < BASE_INFECT_CHANCE * contactRate) {
+      if (!distanceBelow(p.x, p.y, other.x, other.y, infectionRadius)) continue;
+      if (rng() < infectionChance) {
         other.state = "I";
         other.infectedAtFrame = frame;
       }
@@ -203,7 +203,7 @@ function draw(ctx: CanvasRenderingContext2D, particles: Particle[]): void {
   for (const p of particles) {
     ctx.beginPath();
     ctx.arc(p.x, p.y, PARTICLE_RADIUS, 0, Math.PI * 2);
-    ctx.fillStyle = p.state === "S" ? "#c8ccd6" : p.state === "I" ? "#e0455f" : "#4d8dff";
+    ctx.fillStyle = p.state === "S" ? "#38bdf8" : p.state === "I" ? "#fb7159" : "#94a3b8";
     ctx.fill();
   }
 }
@@ -232,10 +232,10 @@ function renderChart(svg: SVGSVGElement, history: Counts[]): void {
   const bandR = must(svg.querySelector<SVGPolygonElement>("#rec-band-r"));
   if (history.length < 2) return;
 
-  const w = 300;
-  const h = 120;
-  const stepX = w / (CHART_MAX_POINTS - 1);
-  const startX = w - (history.length - 1) * stepX;
+  const plotWidth = CHART_X1 - CHART_X0;
+  const plotHeight = CHART_Y1 - CHART_Y0;
+  const stepX = plotWidth / (CHART_MAX_POINTS - 1);
+  const startX = CHART_X1 - (history.length - 1) * stepX;
 
   const rTop: string[] = [];
   const iTop: string[] = [];
@@ -245,14 +245,14 @@ function renderChart(svg: SVGSVGElement, history: Counts[]): void {
     const x = startX + idx * stepX;
     const rFrac = point.r / total;
     const iFrac = point.i / total;
-    const rY = h - rFrac * h;
-    const iY = rY - iFrac * h;
+    const rY = CHART_Y1 - rFrac * plotHeight;
+    const iY = rY - iFrac * plotHeight;
     rTop.push(`${x},${rY}`);
     iTop.push(`${x},${iY}`);
-    sTop.push(`${x},0`);
+    sTop.push(`${x},${CHART_Y0}`);
   });
 
-  const baseline = `${startX},${h} ${w},${h}`;
+  const baseline = `${startX},${CHART_Y1} ${CHART_X1},${CHART_Y1}`;
   bandR.setAttribute("points", `${baseline} ${[...rTop].reverse().join(" ")}`);
   bandI.setAttribute("points", `${rTop.join(" ")} ${[...iTop].reverse().join(" ")}`);
   bandS.setAttribute("points", `${iTop.join(" ")} ${[...sTop].reverse().join(" ")}`);
@@ -264,41 +264,44 @@ export function initEpidemicSimulation(): void {
   if (!maybeCtx) throw new Error("expected 2d canvas context");
   const ctx: CanvasRenderingContext2D = maybeCtx;
   const chart = must(document.querySelector<SVGSVGElement>("#rec-chart"));
-  const densitySlider = must(document.querySelector<HTMLInputElement>("#rec-density"));
-  const densityOutput = must(document.querySelector<HTMLOutputElement>("#rec-density-output"));
-  const contactSlider = must(document.querySelector<HTMLInputElement>("#rec-contact"));
-  const contactOutput = must(document.querySelector<HTMLOutputElement>("#rec-contact-output"));
+  const caseLabel = must(document.querySelector<HTMLElement>("#rec-case-label"));
+  const radiusSlider = must(document.querySelector<HTMLInputElement>("#rec-radius"));
+  const radiusOutput = must(document.querySelector<HTMLElement>("#rec-radius-output"));
+  const chanceSlider = must(document.querySelector<HTMLInputElement>("#rec-chance"));
+  const chanceOutput = must(document.querySelector<HTMLElement>("#rec-chance-output"));
   const quarantineCheckbox = must(document.querySelector<HTMLInputElement>("#rec-quarantine"));
   const pauseButton = must(document.querySelector<HTMLButtonElement>("#rec-pause"));
   const resetButton = must(document.querySelector<HTMLButtonElement>("#rec-reset"));
   const modeButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-rec-mode]"));
-  const dayOut = must(document.querySelector<HTMLElement>("#rec-day"));
-  const sOut = must(document.querySelector<HTMLElement>("#rec-s"));
-  const iOut = must(document.querySelector<HTMLElement>("#rec-i"));
-  const rOut = must(document.querySelector<HTMLElement>("#rec-r"));
+  const dayLabel = must(document.querySelector<HTMLElement>("#rec-chart-day"));
+  const pctR = must(document.querySelector<HTMLElement>("#rec-pct-r"));
+  const pctS = must(document.querySelector<HTMLElement>("#rec-pct-s"));
+  const pctI = must(document.querySelector<HTMLElement>("#rec-pct-i"));
 
   let mode: Mode = "simple";
   let rng = mulberry32(SIM_SEED);
-  let particles = createParticles(mode, Number(densitySlider.value), rng);
+  let particles = createParticles(mode, rng);
   let frame = 0;
   let paused = false;
   let history: Counts[] = [];
   let animationHandle = 0;
 
-  function updateStats(counts: Counts): void {
-    dayOut.textContent = String(Math.floor(frame / 60));
-    sOut.textContent = String(counts.s);
-    iOut.textContent = String(counts.i);
-    rOut.textContent = String(counts.r);
+  function updateLegend(counts: Counts): void {
+    const total = counts.s + counts.i + counts.r;
+    pctR.textContent = ((counts.r / total) * 100).toFixed(1);
+    pctS.textContent = ((counts.s / total) * 100).toFixed(1);
+    pctI.textContent = ((counts.i / total) * 100).toFixed(1);
+    dayLabel.textContent = `Day ${Math.floor(frame / 60)}`;
   }
 
   function reset(): void {
     rng = mulberry32(SIM_SEED + frame);
-    particles = createParticles(mode, Number(densitySlider.value), rng);
+    particles = createParticles(mode, rng);
     frame = 0;
     history = [];
+    caseLabel.textContent = MODE_LABELS[mode];
     const counts = countStates(particles);
-    updateStats(counts);
+    updateLegend(counts);
     draw(ctx, particles);
   }
 
@@ -306,20 +309,20 @@ export function initEpidemicSimulation(): void {
     if (!paused) {
       const opts: StepOptions = {
         mode,
-        density: Number(densitySlider.value),
         quarantine: quarantineCheckbox.checked,
-        frame,
         rng,
       };
+      const infectionRadius = Number(radiusSlider.value);
+      const infectionChance = Number(chanceSlider.value) / 100;
       for (const p of particles) stepParticle(p, opts);
-      updateInfections(particles, Number(contactSlider.value), frame, rng);
+      updateInfections(particles, infectionRadius, infectionChance, frame, rng);
       frame++;
 
       if (frame % CHART_SAMPLE_EVERY === 0) {
         const counts = countStates(particles);
         history.push(counts);
         if (history.length > CHART_MAX_POINTS) history.shift();
-        updateStats(counts);
+        updateLegend(counts);
         renderChart(chart, history);
       }
     }
@@ -327,11 +330,11 @@ export function initEpidemicSimulation(): void {
     animationHandle = requestAnimationFrame(tick);
   }
 
-  densitySlider.addEventListener("input", () => {
-    densityOutput.textContent = densitySlider.value;
+  radiusSlider.addEventListener("input", () => {
+    radiusOutput.textContent = radiusSlider.value;
   });
-  contactSlider.addEventListener("input", () => {
-    contactOutput.textContent = Number(contactSlider.value).toFixed(1);
+  chanceSlider.addEventListener("input", () => {
+    chanceOutput.textContent = chanceSlider.value;
   });
 
   pauseButton.addEventListener("click", () => {
@@ -352,7 +355,8 @@ export function initEpidemicSimulation(): void {
     });
   }
 
-  updateStats(countStates(particles));
+  caseLabel.textContent = MODE_LABELS[mode];
+  updateLegend(countStates(particles));
   draw(ctx, particles);
   animationHandle = requestAnimationFrame(tick);
 
