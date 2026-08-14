@@ -4,83 +4,147 @@ import ParticleWidget from "../components/ParticleWidget.astro";
 ---
 
 <BaseLayout
-  title="What actually stops an outbreak? — COMP4020/8020 Assignment 1"
-  description="An interactive, from-scratch particle simulation exploring how contact rate, isolation, and community structure decide whether an outbreak fizzles or sweeps through a population."
+  title="What causes an outbreak — and what stops one? — COMP4020/8020 Assignment 1"
+  description="An interactive, from-scratch particle simulation exploring what makes an outbreak explode and what makes it end: contact rate, isolation, masks, vaccination, and community structure."
 >
-  <h1>What actually stops an outbreak?</h1>
-  <p class="lede">One bouncing dot in a room of 149 others, rebuilt from scratch as a particle simulation — scroll through it to see why a small change in one number is the difference between a handful of cases and a sweep through the whole room.</p>
+  <h1>What causes an outbreak to explode — and what makes it end?</h1>
+  <p class="lede">One bouncing dot in a room of 149 others, rebuilt from scratch as a particle simulation — scroll through it to see what turns a single case into a sweep through the whole room, and what turns the same outbreak back off.</p>
 
   <section class="panel" id="simple-case">
     <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="8" cy="10" r="3"></circle><circle cx="20" cy="8" r="3"></circle><circle cx="32" cy="12" r="3"></circle><circle cx="10" cy="24" r="3"></circle><circle cx="30" cy="26" r="3"></circle><circle cx="12" cy="34" r="3"></circle><circle cx="28" cy="34" r="3"></circle><circle cx="20" cy="22" r="3" fill="#fb7159" stroke="#fb7159"></circle></svg></span> One infected person, in a room of 149</h2>
     <p class="explainer">Every dot below is a person, moving at random inside a closed room. One of them, shown in orange, starts infected. Nobody is trying to avoid anyone else — there are no rules yet, just motion and proximity. Watch what happens before we measure anything.</p>
-    <ParticleWidget id="s2" mode="simple" showChart={false} ariaLabel="Simple case: one infected particle bouncing among 149 others" />
-    <p class="explainer">No sliders yet — Reset just runs a fresh version of the same scenario.</p>
+    <p class="explainer">Three states are all this model needs: Susceptible (blue, can still catch it), Infected (orange, contagious right now), and Recovered (grey, immune and no longer spreading it).</p>
+    <ParticleWidget
+      id="simple"
+      mode="simple"
+      showChart={false}
+      sliders={["betaGamma"]}
+      betaDefault={0.35}
+      gammaDefault={0.1}
+      ariaLabel="Simple case: one infected particle bouncing among 149 others"
+    />
+    <p class="explainer">Two dials drive everything here: β (beta), how readily the virus jumps from an infected person to a susceptible one, and γ (gamma), how fast an infected person recovers. Push β up or γ down and the room fills with orange faster; the formula above — R0 = β / γ — is the single number that tells you whether an outbreak grows or dies out, before you've even run a frame.</p>
   </section>
 
   <section class="panel" id="measuring">
-    <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke-width="2"><rect x="2" y="14" width="10" height="12" rx="2" stroke="#38bdf8"></rect><rect x="15" y="14" width="10" height="12" rx="2" stroke="#fb7159"></rect><rect x="28" y="14" width="10" height="12" rx="2" stroke="#94a3b8"></rect><path d="M12 20 H15 M25 20 H28" stroke="#5b5f6b"></path></svg></span> How do we measure an outbreak?</h2>
-    <p class="explainer">Three states are all this model needs: Susceptible (blue, can still catch it), Infected (orange, contagious right now), and Recovered (grey, immune and no longer spreading it). The chart below tracks what share of the room is in each state, moment by moment, from the instant the run starts — day zero stays anchored on the left no matter how long you leave it running.</p>
-    <ParticleWidget id="s3" mode="simple" ariaLabel="Measuring an outbreak: the same simple case, now paired with a live S/I/R chart" />
+    <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke-width="2"><rect x="2" y="14" width="10" height="12" rx="2" stroke="#38bdf8"></rect><rect x="15" y="14" width="10" height="12" rx="2" stroke="#fb7159"></rect><rect x="28" y="14" width="10" height="12" rx="2" stroke="#94a3b8"></rect><path d="M12 20 H15 M25 20 H28" stroke="#5b5f6b"></path></svg></span> How do we read an outbreak's chart?</h2>
+    <p class="explainer">The chart below tracks what share of the room is in each state, moment by moment, from the instant the run starts — day zero stays anchored on the left no matter how long you leave it running. Watch the blue susceptible band shrink as the orange infected band rises, peaks, and gives way to grey.</p>
+    <ParticleWidget
+      id="measuring"
+      mode="simple"
+      sliders={["betaGamma"]}
+      betaDefault={0.4}
+      gammaDefault={0.08}
+      ariaLabel="Measuring an outbreak: the same simple case, now paired with a live S/I/R chart"
+    />
+    <p class="explainer">Same two dials as the last section, tuned a little more aggressively so the chart's whole shape — rise, peak, decline — plays out in view rather than crawling.</p>
   </section>
 
-  <section class="panel" id="parameters">
-    <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M6 28 A14 14 0 0 1 34 28"></path><line x1="20" y1="28" x2="28" y2="16"></line><circle cx="20" cy="28" r="2" fill="#f59e0b"></circle></svg></span> What actually controls spread?</h2>
-    <p class="explainer">Two numbers decide almost everything above: how close two people need to be for a contact to risk transmission (infection radius), and how likely that contact is to actually pass the infection on (chance per contact). Drag either slider while the simulation keeps running and watch the curve change shape in real time.</p>
-    <ParticleWidget id="s4" mode="simple" showSliders ariaLabel="Parameters demo: adjust infection radius and chance of infection live" />
-    <p class="explainer">In the real world these two numbers combine into what epidemiologists call the basic reproduction number, R0 — and it isn't a fixed property of a virus. It moves with contact rate and population density: the same pathogen behaves differently in a sparse suburb than in a packed dormitory (CDC, <em>Emerging Infectious Diseases</em>, <a href="https://wwwnc.cdc.gov/eid/article/25/1/17-1901_article">"Complexity of the Basic Reproduction Number (R0)," 2019</a>).</p>
-  </section>
+  <section class="panel" id="virus-module">
+    <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#fb7159" stroke-width="2"><circle cx="20" cy="20" r="9"></circle><circle cx="20" cy="20" r="2.4" fill="#fb7159" stroke="none"></circle><line x1="20" y1="6" x2="20" y2="11"></line><line x1="20" y1="29" x2="20" y2="34"></line><line x1="6" y1="20" x2="11" y2="20"></line><line x1="29" y1="20" x2="34" y2="20"></line><line x1="10" y1="10" x2="13.5" y2="13.5"></line><line x1="30" y1="30" x2="26.5" y2="26.5"></line><line x1="30" y1="10" x2="26.5" y2="13.5"></line><line x1="10" y1="30" x2="13.5" y2="26.5"></line></svg></span> Big module 1 — what the virus itself brings to the table</h2>
+    <p class="explainer">Every outbreak is a tug-of-war between two different kinds of numbers: what the virus itself is capable of, and how people behave around it. Start with the virus — nothing in this module is about behaviour yet, just what happens the instant two bodies get close.</p>
 
-  <section class="panel" id="isolation">
-    <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M20 4 L34 10 V20 C34 29 28 34 20 37 C12 34 6 29 6 20 V10 Z"></path><path d="M14 20 L18 24 L27 14" stroke="#0f9d58"></path></svg></span> Does isolating the sick actually help?</h2>
-    <p class="explainer">Once someone tests positive, isolating them stops every contact they would otherwise have made. Below are two copies of the exact same starting scenario — same room, same random seed — one with isolation switched on, the other without. Nothing else differs; only the outcome does.</p>
-    <div class="rec-pair">
-      <div>
-        <ParticleWidget id="s5a" mode="simple" badge="Isolation off" ariaLabel="Isolation comparison: no isolation" />
-      </div>
-      <div>
-        <ParticleWidget id="s5b" mode="simple" badge="Isolation on" ariaLabel="Isolation comparison: infected cases isolated" />
-      </div>
+    <div class="panel-sub" id="radius">
+      <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#fb7159" stroke-width="2"><circle cx="20" cy="20" r="14" stroke-dasharray="4 3"></circle><circle cx="20" cy="20" r="3" fill="#fb7159" stroke="none"></circle></svg></span> Infection needs proximity</h3>
+      <p class="explainer">Two people only risk transmission when they're within some distance of each other. The halo below traces that boundary live, around every infected dot — anyone drifting inside it is close enough to be at risk this frame.</p>
+      <ParticleWidget id="radius" mode="simple" sliders={["radius"]} ariaLabel="Infection radius demo: a visible halo around every infected particle" />
     </div>
-    <div class="btn-row">
-      <button class="btn" id="s5-reset-both" type="button">Reset both, same seed</button>
+
+    <div class="panel-sub" id="infectious-period">
+      <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#fb7159" stroke-width="2"><circle cx="20" cy="20" r="15"></circle><path d="M20 11 V20 L27 25"></path></svg></span> How long someone stays contagious</h3>
+      <p class="explainer">The other virus property is duration: how many days someone stays contagious before recovering. A longer infectious period means more chances to pass it on before that clock runs out, even with nothing else about the disease changed.</p>
+      <ParticleWidget id="period" mode="simple" sliders={["infectiousPeriod"]} ariaLabel="Infectious period demo: adjust how many days an infection lasts" />
     </div>
-    <p class="explainer">Isolation alone has a blind spot: it only removes people once they're already known to be sick, and by then they may have spent days silently contagious. Combined contact tracing and testing needs to reach roughly 60% efficacy before it reliably pushes the reproduction number below the tipping point (<a href="https://publichealth.jmir.org/2021/10/e32468/">JMIR Public Health and Surveillance, 2021</a>).</p>
+
+    <div class="panel-sub" id="transmission-chance">
+      <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#fb7159" stroke-width="2"><path d="M6 28 A14 14 0 0 1 34 28"></path><line x1="20" y1="28" x2="28" y2="16"></line><circle cx="20" cy="28" r="2" fill="#fb7159"></circle></svg></span> Chance of infection per contact</h3>
+      <p class="explainer">The last virus property is transmission chance: given a contact within range, how likely is it that the virus actually jumps across? Real diseases differ wildly here — it's the number the disease track further down the page is built from.</p>
+      <ParticleWidget id="chance" mode="simple" sliders={["chance"]} chanceDefault={15} ariaLabel="Chance of infection demo: adjust how likely a contact is to transmit" />
+      <p class="explainer">In the real world, radius, duration, and chance combine into what epidemiologists call the basic reproduction number, R0 — and it isn't a fixed property of a virus. It moves with contact rate and population density: the same pathogen behaves differently in a sparse suburb than in a packed dormitory (CDC, <em>Emerging Infectious Diseases</em>, <a href="https://wwwnc.cdc.gov/eid/article/25/1/17-1901_article">"Complexity of the Basic Reproduction Number (R0)," 2019</a>).</p>
+    </div>
   </section>
 
-  <section class="panel" id="hotspot">
-    <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#fb7159" stroke-width="2"><circle cx="20" cy="20" r="3" fill="#fb7159"></circle><circle cx="6" cy="8" r="2.5"></circle><circle cx="34" cy="8" r="2.5"></circle><circle cx="6" cy="32" r="2.5"></circle><circle cx="34" cy="32" r="2.5"></circle><line x1="20" y1="20" x2="6" y2="8"></line><line x1="20" y1="20" x2="34" y2="8"></line><line x1="20" y1="20" x2="6" y2="32"></line><line x1="20" y1="20" x2="34" y2="32"></line></svg></span> One shared errand can undo the rest</h2>
-    <p class="explainer">Switch the layout and almost nothing else changes: everyone still has their own home base and wanders locally most of the time. The only difference is a small, constant chance that any one person makes a trip to a single shared, central location — a grocery store, a train platform — before heading home. Watch how much faster the outbreak moves, even though individual behaviour barely changed. (This "one shared errand" framing is the idea popularised by 3Blue1Brown's 2020 video, <em>Simulating an Epidemic</em>.)</p>
-    <ParticleWidget id="s6" mode="central" ariaLabel="Central location case: everyone occasionally passes through one shared point" />
-  </section>
+  <section class="panel" id="activity-module">
+    <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="14" cy="12" r="4"></circle><path d="M6 30 C6 22 10 19 14 19 C18 19 22 22 22 30"></path><circle cx="29" cy="15" r="3.4"></circle><path d="M22 30 C22 24 25.5 21.5 29 21.5 C32.5 21.5 36 24 36 30"></path></svg></span> Big module 2 — what people do about it</h2>
+    <p class="explainer">The virus's own numbers only tell half the story. What people actually do — whether the sick isolate, whether errands cross communities, whether they mask up or get vaccinated first — changes the outcome just as much, sometimes more.</p>
 
-  <section class="panel" id="communities">
-    <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#94a3b8" stroke-width="2"><line x1="20" y1="2" x2="20" y2="38"></line><line x1="2" y1="20" x2="38" y2="20"></line><circle cx="10" cy="10" r="2.5" fill="#38bdf8" stroke="none"></circle><circle cx="30" cy="10" r="2.5" fill="#38bdf8" stroke="none"></circle><circle cx="10" cy="30" r="2.5" fill="#38bdf8" stroke="none"></circle><circle cx="30" cy="30" r="2.5" fill="#fb7159" stroke="none"></circle></svg></span> Splitting into separate communities helps</h2>
-    <p class="explainer">Now the same room is split into four separate communities — the lines below aren't decoration, they're the boundaries. People spend nearly all their time inside their own community and bounce off its walls just like in the simple case; only a small, fixed chance each frame sends someone travelling to a different one.</p>
-    <ParticleWidget id="s7" mode="communities" ariaLabel="Communities case: four separate groups with rare travel between them" />
-    <p class="explainer">Compare this against the simple case above at similar settings: splitting a population into loosely-connected groups caps how far a single outbreak can spread, even when no individual person is behaving any differently — the structure of who can reach whom matters as much as anyone's individual choices.</p>
+    <div class="panel-sub" id="isolation">
+      <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M20 4 L34 10 V20 C34 29 28 34 20 37 C12 34 6 29 6 20 V10 Z"></path><path d="M14 20 L18 24 L27 14" stroke="#0f9d58"></path></svg></span> Does isolating the sick actually help?</h3>
+      <p class="explainer">Once someone tests positive, isolating them stops every contact they would otherwise have made. In this simulation that isolation is a real, visible place — a fenced-off corner of the room, not just a rule enforced off-screen. Below are two copies of the exact same starting scenario — same room, same random seed — one with isolation switched on, the other without. Nothing else differs; only the outcome does.</p>
+      <div class="rec-pair">
+        <div>
+          <ParticleWidget id="isoa" mode="simple" badge="Isolation off" ariaLabel="Isolation comparison: no isolation" />
+        </div>
+        <div>
+          <ParticleWidget id="isob" mode="simple" badge="Isolation on" ariaLabel="Isolation comparison: infected cases isolated" />
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="isolation-reset-both" type="button">Reset both, same seed</button>
+      </div>
+      <p class="explainer">Isolation alone has a blind spot: it only removes people once they're already known to be sick, and by then they may have spent days silently contagious. Combined contact tracing and testing needs to reach roughly 60% efficacy before it reliably pushes the reproduction number below the tipping point (<a href="https://publichealth.jmir.org/2021/10/e32468/">JMIR Public Health and Surveillance, 2021</a>).</p>
+    </div>
+
+    <div class="panel-sub" id="hotspot">
+      <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#fb7159" stroke-width="2"><circle cx="20" cy="20" r="3" fill="#fb7159"></circle><circle cx="6" cy="8" r="2.5"></circle><circle cx="34" cy="8" r="2.5"></circle><circle cx="6" cy="32" r="2.5"></circle><circle cx="34" cy="32" r="2.5"></circle><line x1="20" y1="20" x2="6" y2="8"></line><line x1="20" y1="20" x2="34" y2="8"></line><line x1="20" y1="20" x2="6" y2="32"></line><line x1="20" y1="20" x2="34" y2="32"></line></svg></span> One shared errand can undo the rest</h3>
+      <p class="explainer">Switch the layout and almost nothing else changes: everyone still has their own home base and wanders locally most of the time. The only difference is a small, constant chance that any one person makes a trip to a single shared, central location — a grocery store, a train platform — before heading home. Watch how much faster the outbreak moves, even though individual behaviour barely changed. (This "one shared errand" framing is the idea popularised by 3Blue1Brown's 2020 video, <em>Simulating an Epidemic</em>.) Drag β and γ here too: the same tipping point applies, just with everyone occasionally routed through one shared spot instead of only bumping into neighbours.</p>
+      <ParticleWidget
+        id="hotspot"
+        mode="central"
+        sliders={["betaGamma"]}
+        betaDefault={0.25}
+        gammaDefault={0.12}
+        ariaLabel="Central location case: everyone occasionally passes through one shared point"
+      />
+    </div>
+
+    <div class="panel-sub" id="communities">
+      <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#94a3b8" stroke-width="2"><line x1="20" y1="2" x2="20" y2="38"></line><line x1="2" y1="20" x2="38" y2="20"></line><circle cx="10" cy="10" r="2.5" fill="#38bdf8" stroke="none"></circle><circle cx="30" cy="10" r="2.5" fill="#38bdf8" stroke="none"></circle><circle cx="10" cy="30" r="2.5" fill="#38bdf8" stroke="none"></circle><circle cx="30" cy="30" r="2.5" fill="#fb7159" stroke="none"></circle></svg></span> Splitting into separate communities helps</h3>
+      <p class="explainer">Now the same room is split into four separate communities — the lines below aren't decoration, they're the boundaries. People spend nearly all their time inside their own community and bounce off its walls just like in the simple case; only a small, fixed chance each frame sends someone travelling to a different one.</p>
+      <ParticleWidget id="communities" mode="communities" ariaLabel="Communities case: four separate groups with rare travel between them" />
+      <p class="explainer">Compare this against the simple case above at similar settings: splitting a population into loosely-connected groups caps how far a single outbreak can spread, even when no individual person is behaving any differently — the structure of who can reach whom matters as much as anyone's individual choices.</p>
+    </div>
+
+    <div class="panel-sub" id="travel">
+      <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#94a3b8" stroke-width="2"><line x1="20" y1="2" x2="20" y2="38" stroke-dasharray="3 3"></line><line x1="2" y1="20" x2="38" y2="20" stroke-dasharray="3 3"></line><path d="M11 11 C18 8 24 24 30 30" stroke="#fb7159" fill="none"></path><circle cx="30" cy="30" r="2.5" fill="#fb7159" stroke="none"></circle></svg></span> Communities aren't perfectly sealed</h3>
+      <p class="explainer">Real communities leak: people commute, visit family, go on holiday. This slider controls exactly one thing — the chance, each frame, that someone currently in one community relocates to a random other one. Turn it up and watch the four-community advantage from above erode as the boundaries stop mattering.</p>
+      <ParticleWidget id="travel" mode="communities" sliders={["travel"]} travelDefault={0.1} ariaLabel="Inter-community travel demo: adjust how often people relocate between communities" />
+    </div>
+
+    <div class="panel-sub" id="masks">
+      <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="20" cy="20" r="12"></circle><path d="M11 22 C14 26 26 26 29 22" stroke="#fff" stroke-width="2.5"></path></svg></span> Masks cut the odds, not the contact</h3>
+      <p class="explainer">Masks don't stop people from meeting — they cut the odds that any one meeting actually passes the virus on. Slide the percentage of the room wearing one; masked people show a thin white ring around their dot so you can spot them moving through the crowd.</p>
+      <ParticleWidget id="masks" mode="simple" sliders={["mask"]} maskDefault={50} ariaLabel="Mask-wearing demo: adjust what share of the room wears a mask" />
+    </div>
+
+    <div class="panel-sub" id="vaccination">
+      <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#0f9d58" stroke-width="2"><line x1="12" y1="28" x2="26" y2="14"></line><line x1="17" y1="19" x2="23" y2="25"></line><circle cx="28" cy="12" r="3" fill="#0f9d58" stroke="none"></circle></svg></span> Vaccination starts the room ahead</h3>
+      <p class="explainer">Vaccination works differently again: instead of changing what happens during a contact, it removes people from the susceptible pool before the simulation even starts. Slide the starting vaccination rate and watch how many dots begin the run already grey — recovered without ever having been sick.</p>
+      <ParticleWidget id="vaccination" mode="simple" sliders={["vaccination"]} vaccinationDefault={30} ariaLabel="Vaccination demo: adjust what share of the room starts immune" />
+    </div>
   </section>
 
   <section class="panel" id="real-diseases">
     <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#f59e0b" stroke-width="2"><line x1="4" y1="20" x2="36" y2="20"></line><line x1="4" y1="14" x2="4" y2="26"></line><line x1="14" y1="16" x2="14" y2="24"></line><line x1="24" y1="16" x2="24" y2="24"></line><line x1="36" y1="14" x2="36" y2="26"></line><circle cx="20" cy="20" r="3" fill="#f59e0b"></circle></svg></span> Where real diseases sit on this scale</h2>
-    <p class="explainer">This simulation's sliders aren't calibrated to any real disease's actual reproduction number — but the diseases below are real, and their R0 estimates come straight from the published literature. Press a marker to preview a similarly-ranked intensity in the sandbox further down; the shape of the outbreak is the point of the comparison, not an exact translation of the number.</p>
+    <p class="explainer">This simulation's sliders aren't calibrated to any real disease's actual reproduction number — but the diseases below are real, and their R0 estimates come straight from the published literature, placed on a single logarithmic axis from R0 = 1 to R0 = 20 so wildly different diseases can share one line without their labels colliding. Press a marker to preview a similarly-ranked intensity in the sandbox further down; the shape of the outbreak is the point of the comparison, not an exact translation of the number.</p>
 
     <div class="r0-track">
       <div class="r0-track-line"></div>
-      <button class="r0-marker" style="left: 20%" type="button" data-disease-preset="flu" data-toggle="flu-detail" data-toggle-group="diseases" aria-expanded="false">
+      <button class="r0-marker r0-marker-above" style="left: 8%" type="button" data-disease-preset="flu" data-toggle="flu-detail" data-toggle-group="diseases" aria-expanded="false">
+        <span class="r0-marker-label">Flu · 1.3</span>
         <span class="r0-marker-dot"></span>
-        <span class="r0-marker-label">Flu ≈1.3</span>
       </button>
-      <button class="r0-marker" style="left: 46%" type="button" data-disease-preset="covid" data-toggle="covid-detail" data-toggle-group="diseases" aria-expanded="false">
+      <button class="r0-marker r0-marker-below" style="left: 21%" type="button" data-disease-preset="ebola" data-toggle="ebola-detail" data-toggle-group="diseases" aria-expanded="false">
         <span class="r0-marker-dot"></span>
-        <span class="r0-marker-label">COVID-19 ≈2.7</span>
+        <span class="r0-marker-label">Ebola · 1.5–2.2</span>
       </button>
-      <button class="r0-marker" style="left: 58%" type="button" data-disease-preset="ebola" data-toggle="ebola-detail" data-toggle-group="diseases" aria-expanded="false">
+      <button class="r0-marker r0-marker-above" style="left: 33%" type="button" data-disease-preset="covid" data-toggle="covid-detail" data-toggle-group="diseases" aria-expanded="false">
+        <span class="r0-marker-label">COVID-19 · 2.7</span>
         <span class="r0-marker-dot"></span>
-        <span class="r0-marker-label">Ebola ≈1.5–2.2</span>
       </button>
-      <button class="r0-marker r0-marker-offchart" type="button" data-disease-preset="measles" data-toggle="measles-detail" data-toggle-group="diseases" aria-expanded="false">
+      <button class="r0-marker r0-marker-below" style="left: 90%" type="button" data-disease-preset="measles" data-toggle="measles-detail" data-toggle-group="diseases" aria-expanded="false">
         <span class="r0-marker-dot"></span>
-        <span class="r0-marker-label">Measles 12–18 (off this scale)</span>
+        <span class="r0-marker-label">Measles · 12–18</span>
       </button>
     </div>
 
@@ -116,25 +180,181 @@ import ParticleWidget from "../components/ParticleWidget.astro";
 
   <section class="panel" id="sandbox">
     <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#38bdf8" stroke-width="2"><line x1="10" y1="6" x2="10" y2="34"></line><line x1="20" y1="6" x2="20" y2="34"></line><line x1="30" y1="6" x2="30" y2="34"></line><circle cx="10" cy="24" r="3" fill="#38bdf8"></circle><circle cx="20" cy="14" r="3" fill="#fb7159"></circle><circle cx="30" cy="20" r="3" fill="#94a3b8"></circle></svg></span> Put it all together</h2>
-    <p class="explainer">Every control from this page, together: pick a layout, set your own numbers, flip isolation on or off, and watch what happens. Press one of the disease markers above and it jumps down here with a similarly-ranked setup already loaded.</p>
-    <ParticleWidget id="s9" mode="simple" showSliders showQuarantineCheckbox showModeTabs ariaLabel="Capstone sandbox: full control over layout, sliders, and isolation" />
+    <p class="explainer">Every control from this page, in one place: layout, infection radius, chance per contact, infectious period, inter-community travel, mask uptake, starting vaccination rate, and isolation. Press one of the disease markers above and it jumps down here with a similarly-ranked setup already loaded.</p>
+    <ParticleWidget
+      id="sandbox"
+      mode="simple"
+      sliders={["radius", "chance", "infectiousPeriod", "travel", "mask", "vaccination"]}
+      showQuarantineCheckbox
+      showModeTabs
+      ariaLabel="Capstone sandbox: full control over layout, every slider, and isolation"
+    />
+  </section>
+
+  <section class="panel" id="quiz">
+    <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#7c3aed" stroke-width="2"><circle cx="20" cy="20" r="16"></circle><path d="M15 15 C15 11 25 11 25 16 C25 19 21 19 21 23"></path><circle cx="21" cy="28" r="1.4" fill="#7c3aed" stroke="none"></circle></svg></span> Quick check</h2>
+    <p class="explainer">Four quick questions, built entirely from what's already on this page. Pick an answer — a wrong one just shakes and lets you try again.</p>
+    <div class="quiz-grid">
+      <div class="quiz-card" data-quiz-answer="a">
+        <p class="quiz-question">If R0 = 3, does the outbreak grow or shrink over time?</p>
+        <div class="btn-row">
+          <button class="btn quiz-choice" type="button" data-quiz-choice="a">Grows</button>
+          <button class="btn quiz-choice" type="button" data-quiz-choice="b">Shrinks</button>
+        </div>
+        <p class="quiz-feedback" aria-live="polite"></p>
+        <span class="quiz-mark quiz-mark-correct" aria-hidden="true">✓</span>
+        <span class="quiz-mark quiz-mark-wrong" aria-hidden="true">✗</span>
+      </div>
+      <div class="quiz-card" data-quiz-answer="b">
+        <p class="quiz-question">You double γ (people recover twice as fast) and leave β unchanged. Does R0 go up or down?</p>
+        <div class="btn-row">
+          <button class="btn quiz-choice" type="button" data-quiz-choice="a">Up</button>
+          <button class="btn quiz-choice" type="button" data-quiz-choice="b">Down</button>
+        </div>
+        <p class="quiz-feedback" aria-live="polite"></p>
+        <span class="quiz-mark quiz-mark-correct" aria-hidden="true">✓</span>
+        <span class="quiz-mark quiz-mark-wrong" aria-hidden="true">✗</span>
+      </div>
+      <div class="quiz-card" data-quiz-answer="b">
+        <p class="quiz-question">You split one room of 150 into four communities with almost no travel between them. Does a single outbreak spread further, or stay more contained?</p>
+        <div class="btn-row">
+          <button class="btn quiz-choice" type="button" data-quiz-choice="a">Spreads further</button>
+          <button class="btn quiz-choice" type="button" data-quiz-choice="b">Stays contained</button>
+        </div>
+        <p class="quiz-feedback" aria-live="polite"></p>
+        <span class="quiz-mark quiz-mark-correct" aria-hidden="true">✓</span>
+        <span class="quiz-mark quiz-mark-wrong" aria-hidden="true">✗</span>
+      </div>
+      <div class="quiz-card" data-quiz-answer="b">
+        <p class="quiz-question">Half the room wears masks that cut per-contact infection chance roughly in half. Does the outbreak tend to grow faster or slower than in an unmasked room?</p>
+        <div class="btn-row">
+          <button class="btn quiz-choice" type="button" data-quiz-choice="a">Faster</button>
+          <button class="btn quiz-choice" type="button" data-quiz-choice="b">Slower</button>
+        </div>
+        <p class="quiz-feedback" aria-live="polite"></p>
+        <span class="quiz-mark quiz-mark-correct" aria-hidden="true">✓</span>
+        <span class="quiz-mark quiz-mark-wrong" aria-hidden="true">✗</span>
+      </div>
+    </div>
   </section>
 
   <section class="panel" id="takeaways">
     <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#0f9d58" stroke-width="2"><circle cx="20" cy="20" r="16"></circle><path d="M13 21 L18 26 L28 14"></path></svg></span> What this toy model actually tells us</h2>
+    <p class="explainer">Underneath every widget on this page is the same formal idea: the SIR model. Everyone is Susceptible, Infected, or Recovered, and only two rates govern how people move between those three states — β, the transmission rate, and γ, the recovery rate. Their ratio, R0 = β / γ, is the tipping point: above 1, each generation of cases outnumbers the last and the outbreak grows; below 1, it shrinks toward nothing; at exactly 1, it's balanced on the edge.</p>
+    <p class="explainer">Every control on this page is really just a way of pushing β or γ around. Infection radius and chance of infection per contact both raise or lower β directly — more opportunities to transmit, or a higher chance each time one occurs. Infectious period is the inverse of γ: stretch it out, and γ falls, so R0 climbs even if nothing about transmission itself changed. Masks lower the effective β by cutting the odds of each contact. Isolation and the shared-hotspot layout both change how many susceptible people an infected person can actually reach, which is β in disguise. Communities and the travel slider between them change who counts as "in contact" at all — shrinking or reopening the pool β gets to act on. Vaccination doesn't touch β or γ; it starts the clock with fewer susceptible people to infect in the first place, which is why it can flatten an outbreak that a change in β or γ alone couldn't.</p>
     <ul class="explainer">
       <li>A contact rate just above the tipping point is the difference between a handful of cases and a sweep through the whole population.</li>
       <li>Isolating confirmed cases helps, but it can't catch what's still incubating silently — testing and tracing speed matter as much as the isolation itself.</li>
       <li>One shared crowded space can undo a dozen individually-careful decisions.</li>
-      <li>Splitting into separate, loosely-connected groups caps how far a single outbreak spreads, even without lowering anyone's individual risk.</li>
-      <li>Real diseases sit at wildly different points on this same scale, and that's why some outbreaks fizzle out and others don't.</li>
+      <li>Splitting into separate, loosely-connected groups caps how far a single outbreak spreads, even without lowering anyone's individual risk — and a little cross-community travel gives that cap back.</li>
+      <li>Masks and vaccination act on the outbreak in two genuinely different ways: one lowers β, the other shrinks the pool β has to work with.</li>
+      <li>Real diseases sit at wildly different points on this same R0 scale, and that's why some outbreaks fizzle out and others don't.</li>
     </ul>
     <p class="explainer">The particle engine, layout, and every line of prose on this page were written from scratch for this assignment. The three-mode structure (simple / central location / communities) draws on the same genre of interactive explainer as Nicky Case's <em>Explorable Explanations</em> and 3Blue1Brown's <em>Simulating an Epidemic</em> (2020), which popularised this style of visualisation; the real-world figures throughout are drawn from the CDC, the Royal Society, and the peer-reviewed sources linked above. This is an illustrative toy model, not the kind of epidemiological modelling used to plan an actual public-health response — the shapes are the takeaway, not the exact numbers.</p>
   </section>
 
+  <section class="panel" id="more-to-think">
+    <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#b5750a" stroke-width="2"><circle cx="20" cy="20" r="16"></circle><line x1="20" y1="12" x2="20" y2="21"></line><circle cx="20" cy="26" r="1.6" fill="#b5750a" stroke="none"></circle></svg></span> More to think about</h2>
+    <p class="explainer">This page's sliders cover radius, chance, duration, isolation, layout, travel, masks, and vaccination — but real outbreaks have more moving parts than any one page can slide around. Three worth knowing about, and one closing thought.</p>
+
+    <div class="think-grid">
+      <div class="think-card">
+        <div class="think-illustration" aria-hidden="true">
+          <svg viewBox="0 0 120 90" width="100%">
+            <rect x="2" y="2" width="116" height="86" rx="10" fill="#fff" stroke="#e1e3ea" stroke-width="2"></rect>
+            <circle cx="30" cy="34" r="9" fill="#94a3b8"></circle>
+            <circle cx="27" cy="31" r="1.4" fill="#16171d"></circle>
+            <circle cx="33" cy="31" r="1.4" fill="#16171d"></circle>
+            <path d="M26 38 Q30 41 34 38" stroke="#16171d" stroke-width="1.4" fill="none"></path>
+            <circle cx="55" cy="34" r="9" fill="#94a3b8"></circle>
+            <circle cx="52" cy="31" r="1.4" fill="#16171d"></circle>
+            <circle cx="58" cy="31" r="1.4" fill="#16171d"></circle>
+            <path d="M51 38 Q55 41 59 38" stroke="#16171d" stroke-width="1.4" fill="none"></path>
+            <circle cx="80" cy="34" r="9" fill="#fb7159"></circle>
+            <circle cx="77" cy="31" r="1.4" fill="#fff"></circle>
+            <circle cx="83" cy="31" r="1.4" fill="#fff"></circle>
+            <path d="M76 39 Q80 36 84 39" stroke="#fff" stroke-width="1.4" fill="none"></path>
+            <path d="M70 22 L90 22 L90 46 L70 46 Z" fill="none" stroke="#b5750a" stroke-width="1.6" stroke-dasharray="3 2"></path>
+            <path d="M75 60 h30 M75 68 h20 M75 76 h24" stroke="#e1e3ea" stroke-width="3" stroke-linecap="round"></path>
+          </svg>
+        </div>
+        <h3>Case fatality rate</h3>
+        <p>Every widget on this page treats "recovered" as one single outcome. Real outbreaks track a case fatality rate too — the share of diagnosed cases who don't recover — and it's a measure of severity, not just spread: a low-R0 disease with a high fatality rate can matter more than a high-R0 one that barely makes anyone sick.</p>
+        <p class="think-links">Further reading: <a href="https://www.who.int/news-room/commentaries/detail/estimating-mortality-from-covid-19">WHO, "Estimating mortality from COVID-19"</a> · <a href="https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/lesson3/section3.html">CDC, Principles of Epidemiology, Lesson 3</a></p>
+      </div>
+
+      <div class="think-card">
+        <div class="think-illustration" aria-hidden="true">
+          <svg viewBox="0 0 120 90" width="100%">
+            <rect x="2" y="2" width="116" height="86" rx="10" fill="#fff" stroke="#e1e3ea" stroke-width="2"></rect>
+            <path d="M20 60 q6 -4 12 0" stroke="#e1e3ea" stroke-width="3" fill="none" stroke-linecap="round"></path>
+            <path d="M14 68 q8 -5 16 0" stroke="#e1e3ea" stroke-width="3" fill="none" stroke-linecap="round"></path>
+            <circle cx="42" cy="55" r="9" fill="#38bdf8"></circle>
+            <circle cx="39" cy="52" r="1.4" fill="#fff"></circle>
+            <circle cx="45" cy="52" r="1.4" fill="#fff"></circle>
+            <path d="M38 59 Q42 61 46 59" stroke="#fff" stroke-width="1.4" fill="none"></path>
+            <path d="M60 40 L96 20" stroke="#94a3b8" stroke-width="2" stroke-dasharray="2 4"></path>
+            <circle cx="96" cy="20" r="4" fill="#94a3b8"></circle>
+            <path d="M60 55 L96 45" stroke="#94a3b8" stroke-width="2" stroke-dasharray="2 4"></path>
+            <circle cx="96" cy="45" r="4" fill="#94a3b8"></circle>
+            <path d="M60 68 L96 70" stroke="#94a3b8" stroke-width="2" stroke-dasharray="2 4"></path>
+            <circle cx="96" cy="70" r="4" fill="#94a3b8"></circle>
+          </svg>
+        </div>
+        <h3>How fast people move</h3>
+        <p>Every particle on this page moves at the same fixed speed, all the time. Real populations don't: how far and how often people actually travel — commuting patterns, lockdowns, holiday travel — reshapes contact structure in ways a constant speed can't capture, and it's been studied directly by tracking real mobility data against real case counts.</p>
+        <p class="think-links">Further reading: <a href="https://www.nature.com/articles/s42254-021-00407-1">Nature Reviews Physics, "What human mobility data tell us about COVID-19 spread," 2021</a></p>
+      </div>
+
+      <div class="think-card">
+        <div class="think-illustration" aria-hidden="true">
+          <svg viewBox="0 0 120 90" width="100%">
+            <rect x="2" y="2" width="116" height="86" rx="10" fill="#fff" stroke="#e1e3ea" stroke-width="2"></rect>
+            <circle cx="34" cy="50" r="9" fill="#38bdf8"></circle>
+            <circle cx="31" cy="47" r="1.4" fill="#fff"></circle>
+            <circle cx="37" cy="47" r="1.4" fill="#fff"></circle>
+            <path d="M30 54 Q34 56 38 54" stroke="#fff" stroke-width="1.4" fill="none"></path>
+            <circle cx="34" cy="28" r="12" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="2 3"></circle>
+            <path d="M34 21 V28 L39 31" stroke="#94a3b8" stroke-width="1.6" fill="none"></path>
+            <path d="M50 42 q10 -2 18 4" stroke="#e1e3ea" stroke-width="2" fill="none"></path>
+            <circle cx="82" cy="50" r="9" fill="#fb7159"></circle>
+            <circle cx="79" cy="47" r="1.4" fill="#fff"></circle>
+            <circle cx="85" cy="47" r="1.4" fill="#fff"></circle>
+            <path d="M77 56 Q82 53 87 56" stroke="#fff" stroke-width="1.4" fill="none"></path>
+          </svg>
+        </div>
+        <h3>Incubation period</h3>
+        <p>The moment someone catches this disease, this simulation shows them as orange straight away. Real infections often have a gap between exposure and symptoms — the incubation period — during which someone can look and feel fine while already contagious, which is exactly what makes contact tracing so much harder than isolating the visibly sick.</p>
+        <p class="think-links">Further reading: <a href="https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/lesson1/section9.html">CDC, Principles of Epidemiology, Section 9: Natural History and Spectrum of Disease</a></p>
+      </div>
+
+      <div class="think-card">
+        <div class="think-illustration" aria-hidden="true">
+          <svg viewBox="0 0 120 90" width="100%">
+            <rect x="2" y="2" width="116" height="86" rx="10" fill="#fff" stroke="#e1e3ea" stroke-width="2"></rect>
+            <circle cx="30" cy="26" r="7" fill="#38bdf8"></circle>
+            <circle cx="90" cy="26" r="7" fill="#fb7159"></circle>
+            <circle cx="30" cy="64" r="7" fill="#94a3b8"></circle>
+            <circle cx="90" cy="64" r="7" fill="#0f9d58"></circle>
+            <circle cx="60" cy="45" r="9" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="3 3"></circle>
+            <line x1="35" y1="30" x2="53" y2="42" stroke="#e1e3ea" stroke-width="1.6"></line>
+            <line x1="85" y1="30" x2="67" y2="42" stroke="#e1e3ea" stroke-width="1.6"></line>
+            <line x1="35" y1="60" x2="53" y2="48" stroke="#e1e3ea" stroke-width="1.6"></line>
+            <line x1="85" y1="60" x2="67" y2="48" stroke="#e1e3ea" stroke-width="1.6"></line>
+          </svg>
+        </div>
+        <h3>This is one model among many</h3>
+        <p>Radius, chance, duration, isolation, layout, travel, masks, vaccination, fatality, mobility, incubation — every one of these is a dial someone could turn, and real epidemiological models turn dozens more at once. The point of this page was never to be complete; it's to make a handful of those dials tangible enough to build intuition for the rest. If this style of toy model clicked for you, 3Blue1Brown's video below is a good next stop.</p>
+        <p class="think-links">Watch: <a href="https://www.youtube.com/watch?v=gxAaO2rsdIs">3Blue1Brown, "Simulating an epidemic," 2020</a></p>
+      </div>
+    </div>
+  </section>
+
   <script>
     import { initEpidemicStory } from "../scripts/epidemic-story";
+    import { initQuiz } from "../scripts/quiz";
     initEpidemicStory();
+    initQuiz();
   </script>
 
   <style>
@@ -142,6 +362,16 @@ import ParticleWidget from "../components/ParticleWidget.astro";
       display: inline-flex;
       margin-right: var(--space-2);
       vertical-align: middle;
+    }
+
+    .panel-sub {
+      margin-block-start: var(--space-5);
+      padding-block-start: var(--space-4);
+      border-block-start: 1px solid var(--border);
+    }
+
+    .panel-sub h3 {
+      margin-block-end: var(--space-2);
     }
 
     .rec-pair {
@@ -158,13 +388,13 @@ import ParticleWidget from "../components/ParticleWidget.astro";
 
     .r0-track {
       position: relative;
-      height: 4rem;
+      height: 6.5rem;
       margin-block: var(--space-4);
     }
 
     .r0-track-line {
       position: absolute;
-      top: 1.9rem;
+      top: 50%;
       left: 0;
       width: 100%;
       height: 2px;
@@ -174,11 +404,12 @@ import ParticleWidget from "../components/ParticleWidget.astro";
 
     .r0-marker {
       position: absolute;
+      top: 50%;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: var(--space-2);
-      transform: translateX(-50%);
+      transform: translate(-50%, -50%);
       background: none;
       border: none;
       font: inherit;
@@ -204,18 +435,132 @@ import ParticleWidget from "../components/ParticleWidget.astro";
       white-space: nowrap;
     }
 
-    .r0-marker-offchart {
-      position: static;
-      display: inline-flex;
-      transform: none;
-      margin-block-start: var(--space-2);
-    }
-
     .disease-detail,
     .disease-detail-placeholder {
       max-width: 42rem;
       color: var(--muted);
       font-size: 0.95rem;
+    }
+
+    .think-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+      gap: var(--space-4);
+      margin-block-start: var(--space-3);
+    }
+
+    .think-card {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .think-illustration {
+      overflow: hidden;
+      border-radius: var(--radius);
+    }
+
+    .think-illustration svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .think-card h3 {
+      margin: 0;
+    }
+
+    .think-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .think-links {
+      font-size: 0.85rem;
+    }
+
+    .quiz-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+      gap: var(--space-4);
+    }
+
+    .quiz-card {
+      position: relative;
+      padding: var(--space-4);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .quiz-question {
+      margin: 0 0 var(--space-3);
+      font-weight: 600;
+    }
+
+    .quiz-feedback {
+      min-height: 1.2em;
+      margin: var(--space-2) 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .quiz-mark {
+      position: absolute;
+      top: var(--space-3);
+      right: var(--space-3);
+      font-size: 1.4rem;
+      font-weight: 800;
+      opacity: 0;
+      transform: scale(0.5);
+      transition:
+        transform 0.2s,
+        opacity 0.2s;
+    }
+
+    .quiz-mark-correct {
+      color: #0f9d58;
+    }
+
+    .quiz-mark-wrong {
+      color: #fb7159;
+    }
+
+    .quiz-card.quiz-correct .quiz-mark-correct {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .quiz-card.quiz-wrong .quiz-mark-wrong {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .quiz-card.quiz-wrong {
+      animation: quiz-shake 0.4s;
+    }
+
+    @keyframes quiz-shake {
+      10%,
+      90% {
+        transform: translateX(-1px);
+      }
+
+      20%,
+      80% {
+        transform: translateX(2px);
+      }
+
+      30%,
+      50%,
+      70% {
+        transform: translateX(-4px);
+      }
+
+      40%,
+      60% {
+        transform: translateX(4px);
+      }
     }
 
     @media (width <= 640px) {
