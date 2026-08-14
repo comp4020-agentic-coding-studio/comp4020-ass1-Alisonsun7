@@ -358,7 +358,7 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
         );
       }
       if (kind === "travel") {
-        const ticks = tickValues(0, 5);
+        const ticks = tickValues(0, 20);
         return (
           <div class="rec-slider">
             <label for={`${id}-travel`}>
@@ -366,15 +366,15 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
               <output class="rec-travel-output" for={`${id}-travel`}>
                 {travelDefault}
               </output>
-              %
+              % per day
             </label>
             <input
               class="rec-range rec-travel-input"
               type="range"
               id={`${id}-travel`}
               min="0"
-              max="5"
-              step="0.1"
+              max="20"
+              step="1"
               value={travelDefault}
               list={`${id}-travel-ticks`}
             />

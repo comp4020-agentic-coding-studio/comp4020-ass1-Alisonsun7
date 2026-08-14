@@ -53,8 +53,8 @@ const ISOLATION_COLS = 5;
 const ISOLATION_ROWS = 6;
 const ISOLATION_GAP = 30;
 const ISOLATION_ENTRY_CHANCE = 0.05;
-const TRAVEL_TRANSIT_FRAMES = 45;
-const TRAVEL_TRAIL_LENGTH = 8;
+const TRAVEL_TRANSIT_FRAMES = 110;
+const TRAVEL_TRAIL_LENGTH = 18;
 
 const MODE_LABELS: Record<Mode, string> = {
   simple: "Simple case",
@@ -789,7 +789,7 @@ function setupStandardWidget(prefix: string, engineOpts: StandardWidgetOptions):
   if (travelSlider && travelOutput) {
     travelSlider.addEventListener("input", () => {
       travelOutput.textContent = travelSlider.value;
-      widget.setCommunityTravelChance(Number(travelSlider.value) / 100);
+      widget.setCommunityTravelChance(Number(travelSlider.value) / 100 / FRAMES_PER_DAY);
     });
   }
   if (maskSlider && maskOutput) {
