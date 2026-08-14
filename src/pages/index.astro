@@ -41,8 +41,8 @@ import ParticleWidget from "../components/ParticleWidget.astro";
   </section>
 
   <section class="panel" id="virus-module">
-    <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#fb7159" stroke-width="2"><circle cx="20" cy="20" r="9"></circle><circle cx="20" cy="20" r="2.4" fill="#fb7159" stroke="none"></circle><line x1="20" y1="6" x2="20" y2="11"></line><line x1="20" y1="29" x2="20" y2="34"></line><line x1="6" y1="20" x2="11" y2="20"></line><line x1="29" y1="20" x2="34" y2="20"></line><line x1="10" y1="10" x2="13.5" y2="13.5"></line><line x1="30" y1="30" x2="26.5" y2="26.5"></line><line x1="30" y1="10" x2="26.5" y2="13.5"></line><line x1="10" y1="30" x2="13.5" y2="26.5"></line></svg></span> Big module 1 — what the virus itself brings to the table</h2>
-    <p class="explainer">Every outbreak is a tug-of-war between two different kinds of numbers: what the virus itself is capable of, and how people behave around it. Start with the virus — nothing in this module is about behaviour yet, just what happens the instant two bodies get close.</p>
+    <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#fb7159" stroke-width="2"><circle cx="20" cy="20" r="9"></circle><circle cx="20" cy="20" r="2.4" fill="#fb7159" stroke="none"></circle><line x1="20" y1="6" x2="20" y2="11"></line><line x1="20" y1="29" x2="20" y2="34"></line><line x1="6" y1="20" x2="11" y2="20"></line><line x1="29" y1="20" x2="34" y2="20"></line><line x1="10" y1="10" x2="13.5" y2="13.5"></line><line x1="30" y1="30" x2="26.5" y2="26.5"></line><line x1="30" y1="10" x2="26.5" y2="13.5"></line><line x1="10" y1="30" x2="13.5" y2="26.5"></line></svg></span> Module 1 — Pathogen Characteristics</h2>
+    <p class="explainer">Every outbreak is a tug-of-war between two different kinds of numbers: what the virus itself is capable of, and how people behave around it. Start with the virus — nothing in this module is about behaviour yet, just what happens the instant two bodies get close. At this module's shared defaults — a 22% chance of transmission per contact and a 6-day infectious period — that works out to β ≈ 0.22, γ ≈ 0.17, or R0 ≈ 1.3: enough to grow, just not dramatically.</p>
 
     <div class="panel-sub" id="radius">
       <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#fb7159" stroke-width="2"><circle cx="20" cy="20" r="14" stroke-dasharray="4 3"></circle><circle cx="20" cy="20" r="3" fill="#fb7159" stroke="none"></circle></svg></span> Infection needs proximity</h3>
@@ -59,13 +59,14 @@ import ParticleWidget from "../components/ParticleWidget.astro";
     <div class="panel-sub" id="transmission-chance">
       <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#fb7159" stroke-width="2"><path d="M6 28 A14 14 0 0 1 34 28"></path><line x1="20" y1="28" x2="28" y2="16"></line><circle cx="20" cy="28" r="2" fill="#fb7159"></circle></svg></span> Chance of infection per contact</h3>
       <p class="explainer">The last virus property is transmission chance: given a contact within range, how likely is it that the virus actually jumps across? Real diseases differ wildly here — it's the number the disease track further down the page is built from.</p>
+      <p class="explainer">This per-contact figure is only one ingredient in β — the overall transmission rate also depends on how many contacts happen per unit time, so β is this chance multiplied by contact rate, not this number alone.</p>
       <ParticleWidget id="chance" mode="simple" sliders={["chance"]} chanceDefault={15} ariaLabel="Chance of infection demo: adjust how likely a contact is to transmit" />
       <p class="explainer">In the real world, radius, duration, and chance combine into what epidemiologists call the basic reproduction number, R0 — and it isn't a fixed property of a virus. It moves with contact rate and population density: the same pathogen behaves differently in a sparse suburb than in a packed dormitory (CDC, <em>Emerging Infectious Diseases</em>, <a href="https://wwwnc.cdc.gov/eid/article/25/1/17-1901_article">"Complexity of the Basic Reproduction Number (R0)," 2019</a>).</p>
     </div>
   </section>
 
   <section class="panel" id="activity-module">
-    <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="14" cy="12" r="4"></circle><path d="M6 30 C6 22 10 19 14 19 C18 19 22 22 22 30"></path><circle cx="29" cy="15" r="3.4"></circle><path d="M22 30 C22 24 25.5 21.5 29 21.5 C32.5 21.5 36 24 36 30"></path></svg></span> Big module 2 — what people do about it</h2>
+    <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="14" cy="12" r="4"></circle><path d="M6 30 C6 22 10 19 14 19 C18 19 22 22 22 30"></path><circle cx="29" cy="15" r="3.4"></circle><path d="M22 30 C22 24 25.5 21.5 29 21.5 C32.5 21.5 36 24 36 30"></path></svg></span> Module 2 — Human Behaviour and Intervention</h2>
     <p class="explainer">The virus's own numbers only tell half the story. What people actually do — whether the sick isolate, whether errands cross communities, whether they mask up or get vaccinated first — changes the outcome just as much, sometimes more.</p>
 
     <div class="panel-sub" id="isolation">
@@ -159,23 +160,23 @@ import ParticleWidget from "../components/ParticleWidget.astro";
 
   <section class="panel" id="real-diseases">
     <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#f59e0b" stroke-width="2"><line x1="4" y1="20" x2="36" y2="20"></line><line x1="4" y1="14" x2="4" y2="26"></line><line x1="14" y1="16" x2="14" y2="24"></line><line x1="24" y1="16" x2="24" y2="24"></line><line x1="36" y1="14" x2="36" y2="26"></line><circle cx="20" cy="20" r="3" fill="#f59e0b"></circle></svg></span> Where real diseases sit on this scale</h2>
-    <p class="explainer">This simulation's sliders aren't calibrated to any real disease's actual reproduction number — but the diseases below are real, and their R0 estimates come straight from the published literature, placed on a single logarithmic axis from R0 = 1 to R0 = 20 so wildly different diseases can share one line without their labels colliding. Press a marker to preview a similarly-ranked intensity in the sandbox further down; the shape of the outbreak is the point of the comparison, not an exact translation of the number.</p>
+    <p class="explainer">This simulation's sliders aren't calibrated to any real disease's actual reproduction number — but the diseases below are real, and their R0 estimates come straight from the published literature, placed on a single logarithmic axis from R0 = 1 to R0 = 20 — these diseases span more than an order of magnitude, so a linear scale would crush the low end into a single point.</p>
 
     <div class="r0-track">
       <div class="r0-track-line"></div>
-      <button class="r0-marker r0-marker-above" style="left: 8%" type="button" data-disease-preset="flu" data-toggle="flu-detail" data-toggle-group="diseases" aria-expanded="false">
+      <button class="r0-marker r0-marker-above" style="left: 8%" type="button" data-toggle="flu-detail" data-toggle-group="diseases" aria-expanded="false">
         <span class="r0-marker-label">Flu · 1.3</span>
         <span class="r0-marker-dot"></span>
       </button>
-      <button class="r0-marker r0-marker-below" style="left: 21%" type="button" data-disease-preset="ebola" data-toggle="ebola-detail" data-toggle-group="diseases" aria-expanded="false">
+      <button class="r0-marker r0-marker-below" style="left: 21%" type="button" data-toggle="ebola-detail" data-toggle-group="diseases" aria-expanded="false">
         <span class="r0-marker-dot"></span>
         <span class="r0-marker-label">Ebola · 1.5–2.2</span>
       </button>
-      <button class="r0-marker r0-marker-above" style="left: 33%" type="button" data-disease-preset="covid" data-toggle="covid-detail" data-toggle-group="diseases" aria-expanded="false">
+      <button class="r0-marker r0-marker-above" style="left: 33%" type="button" data-toggle="covid-detail" data-toggle-group="diseases" aria-expanded="false">
         <span class="r0-marker-label">COVID-19 · 2.7</span>
         <span class="r0-marker-dot"></span>
       </button>
-      <button class="r0-marker r0-marker-below" style="left: 90%" type="button" data-disease-preset="measles" data-toggle="measles-detail" data-toggle-group="diseases" aria-expanded="false">
+      <button class="r0-marker r0-marker-below" style="left: 90%" type="button" data-toggle="measles-detail" data-toggle-group="diseases" aria-expanded="false">
         <span class="r0-marker-dot"></span>
         <span class="r0-marker-label">Measles · 12–18</span>
       </button>
@@ -196,9 +197,9 @@ import ParticleWidget from "../components/ParticleWidget.astro";
     </div>
 
     <div class="btn-row">
-      <button class="btn" type="button" data-disease-preset="below" data-toggle="below-detail" data-toggle-group="diseases" aria-expanded="false">R0 &lt; 1</button>
-      <button class="btn" type="button" data-disease-preset="at" data-toggle="at-detail" data-toggle-group="diseases" aria-expanded="false">R0 ≈ 1</button>
-      <button class="btn" type="button" data-disease-preset="above" data-toggle="above-detail" data-toggle-group="diseases" aria-expanded="false">R0 &gt; 1</button>
+      <button class="btn" type="button" data-toggle="below-detail" data-toggle-group="diseases" aria-expanded="false">R0 &lt; 1</button>
+      <button class="btn" type="button" data-toggle="at-detail" data-toggle-group="diseases" aria-expanded="false">R0 ≈ 1</button>
+      <button class="btn" type="button" data-toggle="above-detail" data-toggle-group="diseases" aria-expanded="false">R0 &gt; 1</button>
     </div>
     <div id="below-detail" class="disease-detail" hidden>
       <p>R0 below 1 means each infected person, on average, infects fewer than one other — the outbreak shrinks over time. SARS-CoV in 2003 and COVID-19 during 2020's lockdowns both landed here through deliberate intervention, not luck (<a href="https://wwwnc.cdc.gov/eid/article/10/7/03-0647_article">CDC EID, 2004</a>; <a href="https://www.nature.com/articles/s41586-020-2405-7">Flaxman et al., Nature, 2020</a>).</p>
@@ -213,11 +214,13 @@ import ParticleWidget from "../components/ParticleWidget.astro";
 
   <section class="panel" id="sandbox">
     <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#38bdf8" stroke-width="2"><line x1="10" y1="6" x2="10" y2="34"></line><line x1="20" y1="6" x2="20" y2="34"></line><line x1="30" y1="6" x2="30" y2="34"></line><circle cx="10" cy="24" r="3" fill="#38bdf8"></circle><circle cx="20" cy="14" r="3" fill="#fb7159"></circle><circle cx="30" cy="20" r="3" fill="#94a3b8"></circle></svg></span> Put it all together</h2>
-    <p class="explainer">Every control from this page, in one place: layout, infection radius, chance per contact, infectious period, inter-community travel, mask uptake, starting vaccination rate, and isolation. Press one of the disease markers above and it jumps down here with a similarly-ranked setup already loaded.</p>
+    <p class="explainer">Every control from this page, in one place: layout, β and γ directly, infection radius, chance per contact, infectious period, inter-community travel, mask uptake, starting vaccination rate, and isolation. Every dial on this page — R0 sliders included — is really just a way of pushing β or γ around; here you can push them yourself.</p>
     <ParticleWidget
       id="sandbox"
       mode="simple"
-      sliders={["radius", "chance", "infectiousPeriod", "travel", "mask", "vaccination"]}
+      sliders={["radius", "chance", "infectiousPeriod", "betaGamma", "travel", "mask", "vaccination"]}
+      betaDefault={0.25}
+      gammaDefault={0.15}
       showQuarantineCheckbox
       showModeTabs
       ariaLabel="Capstone sandbox: full control over layout, every slider, and isolation"

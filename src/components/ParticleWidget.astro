@@ -54,7 +54,7 @@ const {
   ariaLabel = "Bouncing-particle epidemic simulation",
   radiusDefault = 8,
   chanceDefault = 6,
-  periodDefault = 4,
+  periodDefault = 6,
   travelDefault = 0.1,
   maskDefault = 50,
   vaccinationDefault = 30,
@@ -197,6 +197,19 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
             <li class="rec-legend-r"><span class="swatch rec-swatch-r" /><span class="rec-pct-r">0.0</span>% recovered</li>
           </ul>
         </div>
+      </div>
+    )
+  }
+
+  {
+    sliders.includes("mask") && (
+      <div class="rec-mask-callout">
+        <p>
+          Unmasked: about <output class="rec-mask-callout-unmasked">–</output>% chance per contact.
+        </p>
+        <p>
+          Masked: about <output class="rec-mask-callout-masked">–</output>% chance per contact.
+        </p>
       </div>
     )
   }
@@ -399,10 +412,6 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
                 <option value={t}></option>
               ))}
             </datalist>
-            <p class="rec-mask-callout">
-              Unmasked: about <output class="rec-mask-callout-unmasked">–</output>% chance per
-              contact · masked: about <output class="rec-mask-callout-masked">–</output>%
-            </p>
           </div>
         );
       }

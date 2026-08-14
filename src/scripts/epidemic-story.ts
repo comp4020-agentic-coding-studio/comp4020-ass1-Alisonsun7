@@ -852,62 +852,6 @@ function setupStandardWidget(prefix: string, engineOpts: StandardWidgetOptions):
   return widget;
 }
 
-interface DiseasePreset {
-  radius: number;
-  chance: number;
-}
-
-// Illustrative, hand-ranked stand-ins for "how this looks in the sandbox" —
-// not a calibrated translation of the cited R0 figures into this engine's
-// radius/chance units. The sourced R0 values (in the markup) are the real
-// numbers; these presets only preserve their relative ordering.
-const DISEASE_PRESETS: Record<string, DiseasePreset> = {
-  flu: { radius: 6, chance: 0.04 },
-  covid: { radius: 8, chance: 0.08 },
-  ebola: { radius: 8, chance: 0.1 },
-  measles: { radius: 14, chance: 0.25 },
-  below: { radius: 4, chance: 0.02 },
-  at: { radius: 6, chance: 0.05 },
-  above: { radius: 12, chance: 0.18 },
-};
-
-function wireDiseasePresets(sandbox: ParticleWidget): void {
-  const sandboxContainer = must(document.getElementById("sandbox-widget"));
-  const radiusSlider = must(sandboxContainer.querySelector<HTMLInputElement>(".rec-radius-input"));
-  const radiusOutput = must(sandboxContainer.querySelector<HTMLElement>(".rec-radius-output"));
-  const chanceSlider = must(sandboxContainer.querySelector<HTMLInputElement>(".rec-chance-input"));
-  const chanceOutput = must(sandboxContainer.querySelector<HTMLElement>(".rec-chance-output"));
-  const modeButtons = Array.from(
-    sandboxContainer.querySelectorAll<HTMLButtonElement>("[data-rec-mode]"),
-  );
-  const presetButtons = Array.from(
-    document.querySelectorAll<HTMLButtonElement>("[data-disease-preset]"),
-  );
-
-  for (const button of presetButtons) {
-    button.addEventListener("click", () => {
-      const key = button.dataset.diseasePreset;
-      const preset = key ? DISEASE_PRESETS[key] : undefined;
-      if (!preset) return;
-
-      for (const modeButton of modeButtons) {
-        modeButton.setAttribute("aria-pressed", String(modeButton.dataset.recMode === "simple"));
-      }
-      radiusSlider.value = String(preset.radius);
-      radiusOutput.textContent = String(preset.radius);
-      const chancePercent = Math.round(preset.chance * 100);
-      chanceSlider.value = String(chancePercent);
-      chanceOutput.textContent = String(chancePercent);
-
-      sandbox.setMode("simple");
-      sandbox.setInfectionRadius(preset.radius);
-      sandbox.setInfectionChance(preset.chance);
-
-      document.getElementById("sandbox")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }
-}
-
 // Generic accordion wiring for the R0-track disease/regime detail panels:
 // each trigger names its own detail block via data-toggle, and triggers
 // sharing a data-toggle-group close each other so only one detail block per
@@ -975,9 +919,14 @@ export function initEpidemicStory(): void {
     recoveryFrames: 750,
   });
 
-  setupStandardWidget("radius", { mode: "simple", showRadiusHalo: true, infectionChance: 0.22 });
-  setupStandardWidget("period", { mode: "simple", recoveryFrames: 240, infectionChance: 0.22 });
-  setupStandardWidget("chance", { mode: "simple", infectionChance: 0.15 });
+  setupStandardWidget("radius", {
+    mode: "simple",
+    showRadiusHalo: true,
+    infectionChance: 0.22,
+    recoveryFrames: 360,
+  });
+  setupStandardWidget("period", { mode: "simple", recoveryFrames: 360, infectionChance: 0.22 });
+  setupStandardWidget("chance", { mode: "simple", infectionChance: 0.15, recoveryFrames: 360 });
 
   const isolationOff = setupStandardWidget("isoa", {
     mode: "simple",
@@ -1037,8 +986,11 @@ export function initEpidemicStory(): void {
     vaccinationRate: 0.4,
   });
 
-  const sandbox = setupStandardWidget("sandbox", { mode: "simple" });
-  wireDiseasePresets(sandbox);
+  setupStandardWidget("sandbox", {
+    mode: "simple",
+    infectionChance: 0.25,
+    recoveryFrames: Math.round(FRAMES_PER_DAY / 0.15),
+  });
 
   initToggleGroups();
 }
