@@ -6,7 +6,8 @@ type SliderKind =
   | "betaGamma"
   | "travel"
   | "mask"
-  | "vaccination";
+  | "vaccination"
+  | "r0";
 
 const SLIDER_ORDER: SliderKind[] = [
   "radius",
@@ -16,6 +17,7 @@ const SLIDER_ORDER: SliderKind[] = [
   "travel",
   "mask",
   "vaccination",
+  "r0",
 ];
 
 interface Props {
@@ -35,6 +37,10 @@ interface Props {
   vaccinationDefault?: number;
   betaDefault?: number;
   gammaDefault?: number;
+  r0Default?: number;
+  r0GammaFixed?: number;
+  r0Min?: number;
+  r0Max?: number;
 }
 
 const {
@@ -54,7 +60,19 @@ const {
   vaccinationDefault = 30,
   betaDefault = 0.35,
   gammaDefault = 0.15,
+  r0Default = 2,
+  r0GammaFixed = 0.15,
+  r0Min = 0.5,
+  r0Max = 5,
 } = Astro.props;
+
+function tickValues(min: number, max: number, count = 5): number[] {
+  const values: number[] = [];
+  for (let i = 0; i < count; i++) {
+    values.push(min + ((max - min) * i) / (count - 1));
+  }
+  return values;
+}
 
 const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
 ---
@@ -186,6 +204,7 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
   {
     orderedSliders.map((kind) => {
       if (kind === "radius") {
+        const ticks = tickValues(4, 20);
         return (
           <div class="rec-slider">
             <label for={`${id}-radius`}>
@@ -203,11 +222,18 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
               max="20"
               step="1"
               value={radiusDefault}
+              list={`${id}-radius-ticks`}
             />
+            <datalist id={`${id}-radius-ticks`}>
+              {ticks.map((t) => (
+                <option value={t}></option>
+              ))}
+            </datalist>
           </div>
         );
       }
       if (kind === "chance") {
+        const ticks = tickValues(1, 30);
         return (
           <div class="rec-slider">
             <label for={`${id}-chance`}>
@@ -225,11 +251,18 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
               max="30"
               step="1"
               value={chanceDefault}
+              list={`${id}-chance-ticks`}
             />
+            <datalist id={`${id}-chance-ticks`}>
+              {ticks.map((t) => (
+                <option value={t}></option>
+              ))}
+            </datalist>
           </div>
         );
       }
       if (kind === "infectiousPeriod") {
+        const ticks = tickValues(2, 20);
         return (
           <div class="rec-slider">
             <label for={`${id}-period`}>
@@ -247,11 +280,19 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
               max="20"
               step="1"
               value={periodDefault}
+              list={`${id}-period-ticks`}
             />
+            <datalist id={`${id}-period-ticks`}>
+              {ticks.map((t) => (
+                <option value={t}></option>
+              ))}
+            </datalist>
           </div>
         );
       }
       if (kind === "betaGamma") {
+        const betaTicks = tickValues(0.05, 0.6);
+        const gammaTicks = tickValues(0.03, 0.5);
         return (
           <div class="rec-slider rec-beta-gamma">
             <label for={`${id}-beta`}>β — transmission rate</label>
@@ -263,7 +304,13 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
               max="0.6"
               step="0.01"
               value={betaDefault}
+              list={`${id}-beta-ticks`}
             />
+            <datalist id={`${id}-beta-ticks`}>
+              {betaTicks.map((t) => (
+                <option value={t}></option>
+              ))}
+            </datalist>
             <label for={`${id}-gamma`}>γ — recovery rate</label>
             <input
               class="rec-range rec-gamma-input"
@@ -273,7 +320,13 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
               max="0.5"
               step="0.01"
               value={gammaDefault}
+              list={`${id}-gamma-ticks`}
             />
+            <datalist id={`${id}-gamma-ticks`}>
+              {gammaTicks.map((t) => (
+                <option value={t}></option>
+              ))}
+            </datalist>
             <p class="r0-formula">
               R0 = β / γ ={" "}
               <output class="rec-beta-output" for={`${id}-beta`}>
@@ -292,6 +345,7 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
         );
       }
       if (kind === "travel") {
+        const ticks = tickValues(0, 5);
         return (
           <div class="rec-slider">
             <label for={`${id}-travel`}>
@@ -309,11 +363,18 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
               max="5"
               step="0.1"
               value={travelDefault}
+              list={`${id}-travel-ticks`}
             />
+            <datalist id={`${id}-travel-ticks`}>
+              {ticks.map((t) => (
+                <option value={t}></option>
+              ))}
+            </datalist>
           </div>
         );
       }
       if (kind === "mask") {
+        const ticks = tickValues(0, 100);
         return (
           <div class="rec-slider">
             <label for={`${id}-mask`}>
@@ -331,7 +392,13 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
               max="100"
               step="5"
               value={maskDefault}
+              list={`${id}-mask-ticks`}
             />
+            <datalist id={`${id}-mask-ticks`}>
+              {ticks.map((t) => (
+                <option value={t}></option>
+              ))}
+            </datalist>
             <p class="rec-mask-callout">
               Unmasked: about <output class="rec-mask-callout-unmasked">–</output>% chance per
               contact · masked: about <output class="rec-mask-callout-masked">–</output>%
@@ -339,24 +406,71 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
           </div>
         );
       }
+      if (kind === "vaccination") {
+        const ticks = tickValues(0, 100);
+        return (
+          <div class="rec-slider">
+            <label for={`${id}-vaccination`}>
+              Vaccinated at the start{" "}
+              <output class="rec-vaccination-output" for={`${id}-vaccination`}>
+                {vaccinationDefault}
+              </output>
+              %
+            </label>
+            <input
+              class="rec-range rec-vaccination-input"
+              type="range"
+              id={`${id}-vaccination`}
+              min="0"
+              max="100"
+              step="5"
+              value={vaccinationDefault}
+              list={`${id}-vaccination-ticks`}
+            />
+            <datalist id={`${id}-vaccination-ticks`}>
+              {ticks.map((t) => (
+                <option value={t}></option>
+              ))}
+            </datalist>
+          </div>
+        );
+      }
+      const r0Ticks = tickValues(r0Min, r0Max);
+      const r0Beta = r0Default * r0GammaFixed;
       return (
-        <div class="rec-slider">
-          <label for={`${id}-vaccination`}>
-            Vaccinated at the start{" "}
-            <output class="rec-vaccination-output" for={`${id}-vaccination`}>
-              {vaccinationDefault}
+        <div class="rec-slider rec-r0-wrapper" data-gamma-fixed={r0GammaFixed}>
+          <label for={`${id}-r0`}>
+            R0{" "}
+            <output class="rec-r0-input-output" for={`${id}-r0`}>
+              {r0Default.toFixed(2)}
             </output>
-            %
           </label>
           <input
-            class="rec-range rec-vaccination-input"
+            class="rec-range rec-r0-input"
             type="range"
-            id={`${id}-vaccination`}
-            min="0"
-            max="100"
-            step="5"
-            value={vaccinationDefault}
+            id={`${id}-r0`}
+            min={r0Min}
+            max={r0Max}
+            step="0.01"
+            value={r0Default}
+            list={`${id}-r0-ticks`}
           />
+          <datalist id={`${id}-r0-ticks`}>
+            {r0Ticks.map((t) => (
+              <option value={t}></option>
+            ))}
+          </datalist>
+          <p class="r0-formula">
+            R0 = β / γ ={" "}
+            <output class="rec-r0-beta-output" for={`${id}-r0`}>
+              {r0Beta.toFixed(2)}
+            </output>{" "}
+            /{" "}
+            {r0GammaFixed.toFixed(2)} ={" "}
+            <output class="rec-r0-value" for={`${id}-r0`}>
+              {r0Default.toFixed(2)}
+            </output>
+          </p>
         </div>
       );
     })
@@ -582,8 +696,14 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
 
   .rec-range {
     width: 100%;
-    height: 2px;
-    background: var(--border);
+    height: 6px;
+    background-color: var(--border);
+    background-image:
+      linear-gradient(to right, var(--muted) 0 2px, transparent 2px),
+      linear-gradient(to left, var(--muted) 0 2px, transparent 2px),
+      repeating-linear-gradient(to right, var(--muted) 0 2px, transparent 2px 25%);
+    background-repeat: no-repeat;
+    border-radius: 3px;
     appearance: none;
     outline: none;
   }
@@ -607,8 +727,14 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
   }
 
   .rec-range::-moz-range-track {
-    height: 2px;
-    background: var(--border);
+    height: 6px;
+    background-color: var(--border);
+    background-image:
+      linear-gradient(to right, var(--muted) 0 2px, transparent 2px),
+      linear-gradient(to left, var(--muted) 0 2px, transparent 2px),
+      repeating-linear-gradient(to right, var(--muted) 0 2px, transparent 2px 25%);
+    background-repeat: no-repeat;
+    border-radius: 3px;
   }
 
   @media (width <= 640px) {

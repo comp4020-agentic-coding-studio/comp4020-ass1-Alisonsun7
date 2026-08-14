@@ -87,13 +87,13 @@ import ParticleWidget from "../components/ParticleWidget.astro";
 
     <div class="panel-sub" id="hotspot">
       <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#fb7159" stroke-width="2"><circle cx="20" cy="20" r="3" fill="#fb7159"></circle><circle cx="6" cy="8" r="2.5"></circle><circle cx="34" cy="8" r="2.5"></circle><circle cx="6" cy="32" r="2.5"></circle><circle cx="34" cy="32" r="2.5"></circle><line x1="20" y1="20" x2="6" y2="8"></line><line x1="20" y1="20" x2="34" y2="8"></line><line x1="20" y1="20" x2="6" y2="32"></line><line x1="20" y1="20" x2="34" y2="32"></line></svg></span> One shared errand can undo the rest</h3>
-      <p class="explainer">Switch the layout and almost nothing else changes: everyone still has their own home base and wanders locally most of the time. The only difference is a small, constant chance that any one person makes a trip to a single shared, central location — a grocery store, a train platform — before heading home. Watch how much faster the outbreak moves, even though individual behaviour barely changed. (This "one shared errand" framing is the idea popularised by 3Blue1Brown's 2020 video, <em>Simulating an Epidemic</em>.) Drag β and γ here too: the same tipping point applies, just with everyone occasionally routed through one shared spot instead of only bumping into neighbours.</p>
+      <p class="explainer">Switch the layout and almost nothing else changes: everyone still has their own home base and wanders locally most of the time. The only difference is a small, constant chance that any one person makes a trip to a single shared, central location — a grocery store, a train platform — before heading home. Watch how much faster the outbreak moves, even though individual behaviour barely changed. (This "one shared errand" framing is the idea popularised by 3Blue1Brown's 2020 video, <em>Simulating an Epidemic</em>.) Drag R0 here too: the same tipping point applies, just with everyone occasionally routed through one shared spot instead of only bumping into neighbours.</p>
       <ParticleWidget
         id="hotspot"
         mode="central"
-        sliders={["betaGamma"]}
-        betaDefault={0.25}
-        gammaDefault={0.12}
+        sliders={["r0"]}
+        r0Default={2.08}
+        r0GammaFixed={0.12}
         ariaLabel="Central location case: everyone occasionally passes through one shared point"
       />
     </div>
@@ -114,13 +114,13 @@ import ParticleWidget from "../components/ParticleWidget.astro";
     <div class="panel-sub" id="masks">
       <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="20" cy="20" r="12"></circle><path d="M11 22 C14 26 26 26 29 22" stroke="#fff" stroke-width="2.5"></path></svg></span> Masks cut the odds, not the contact</h3>
       <p class="explainer">Masks don't stop people from meeting — they cut the odds that any one meeting actually passes the virus on. Slide the percentage of the room wearing one; masked people show a thin white ring around their dot so you can spot them moving through the crowd.</p>
-      <ParticleWidget id="masks" mode="simple" sliders={["mask"]} maskDefault={50} ariaLabel="Mask-wearing demo: adjust what share of the room wears a mask" />
+      <ParticleWidget id="masks" mode="simple" sliders={["mask", "r0"]} maskDefault={50} r0Default={2} r0GammaFixed={0.15} ariaLabel="Mask-wearing demo: adjust what share of the room wears a mask" />
     </div>
 
     <div class="panel-sub" id="vaccination">
       <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#0f9d58" stroke-width="2"><line x1="12" y1="28" x2="26" y2="14"></line><line x1="17" y1="19" x2="23" y2="25"></line><circle cx="28" cy="12" r="3" fill="#0f9d58" stroke="none"></circle></svg></span> Vaccination starts the room ahead</h3>
       <p class="explainer">Vaccination works differently again: instead of changing what happens during a contact, it removes people from the susceptible pool before the simulation even starts. Slide the starting vaccination rate and watch how many dots begin the run already grey — recovered without ever having been sick.</p>
-      <ParticleWidget id="vaccination" mode="simple" sliders={["vaccination"]} vaccinationDefault={30} ariaLabel="Vaccination demo: adjust what share of the room starts immune" />
+      <ParticleWidget id="vaccination" mode="simple" sliders={["vaccination", "r0"]} vaccinationDefault={40} r0Default={3} r0GammaFixed={0.15} ariaLabel="Vaccination demo: adjust what share of the room starts immune" />
     </div>
   </section>
 

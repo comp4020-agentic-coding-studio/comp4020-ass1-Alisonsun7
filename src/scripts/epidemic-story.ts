@@ -627,6 +627,10 @@ function setupStandardWidget(prefix: string, engineOpts: StandardWidgetOptions):
   const gammaSlider = container.querySelector<HTMLInputElement>(".rec-gamma-input");
   const gammaOutput = container.querySelector<HTMLElement>(".rec-gamma-output");
   const r0Output = container.querySelector<HTMLElement>(".rec-r0-value");
+  const r0Wrapper = container.querySelector<HTMLElement>(".rec-r0-wrapper");
+  const r0Slider = container.querySelector<HTMLInputElement>(".rec-r0-input");
+  const r0InputOutput = container.querySelector<HTMLElement>(".rec-r0-input-output");
+  const r0BetaOutput = container.querySelector<HTMLElement>(".rec-r0-beta-output");
   const quarantineCheckbox = container.querySelector<HTMLInputElement>(".rec-quarantine-input");
   const modeButtons = Array.from(container.querySelectorAll<HTMLButtonElement>("[data-rec-mode]"));
 
@@ -714,6 +718,17 @@ function setupStandardWidget(prefix: string, engineOpts: StandardWidgetOptions):
     };
     betaSlider.addEventListener("input", updateBetaGamma);
     gammaSlider.addEventListener("input", updateBetaGamma);
+  }
+  if (r0Slider && r0Output && r0Wrapper) {
+    const gammaFixed = Number(r0Wrapper.dataset.gammaFixed);
+    r0Slider.addEventListener("input", () => {
+      const r0 = Number(r0Slider.value);
+      const beta = r0 * gammaFixed;
+      if (r0InputOutput) r0InputOutput.textContent = r0.toFixed(2);
+      if (r0BetaOutput) r0BetaOutput.textContent = beta.toFixed(2);
+      r0Output.textContent = r0.toFixed(2);
+      widget.setInfectionChance(beta);
+    });
   }
   if (quarantineCheckbox) {
     quarantineCheckbox.addEventListener("change", () => {
@@ -837,6 +852,9 @@ function initToggleGroups(): void {
 }
 
 const ISOLATION_SEED = 500_000_007;
+const HOTSPOT_GAMMA_FIXED = 0.12;
+const MASKS_GAMMA_FIXED = 0.15;
+const VACCINATION_GAMMA_FIXED = 0.15;
 
 export function initEpidemicStory(): void {
   // Dramatic, always-sweeps defaults: high beta, long-ish infectious period.
@@ -873,13 +891,23 @@ export function initEpidemicStory(): void {
 
   setupStandardWidget("hotspot", {
     mode: "central",
-    infectionChance: 0.25,
-    recoveryFrames: 500,
+    infectionChance: 2.08 * HOTSPOT_GAMMA_FIXED,
+    recoveryFrames: Math.round(FRAMES_PER_DAY / HOTSPOT_GAMMA_FIXED),
   });
   setupStandardWidget("communities", { mode: "communities" });
   setupStandardWidget("travel", { mode: "communities", communityTravelChance: 0.001 });
-  setupStandardWidget("masks", { mode: "simple", infectionChance: 0.15, maskRate: 0.5 });
-  setupStandardWidget("vaccination", { mode: "simple", infectionChance: 0.1, vaccinationRate: 0.3 });
+  setupStandardWidget("masks", {
+    mode: "simple",
+    infectionChance: 2 * MASKS_GAMMA_FIXED,
+    recoveryFrames: Math.round(FRAMES_PER_DAY / MASKS_GAMMA_FIXED),
+    maskRate: 0.5,
+  });
+  setupStandardWidget("vaccination", {
+    mode: "simple",
+    infectionChance: 3 * VACCINATION_GAMMA_FIXED,
+    recoveryFrames: Math.round(FRAMES_PER_DAY / VACCINATION_GAMMA_FIXED),
+    vaccinationRate: 0.4,
+  });
 
   const sandbox = setupStandardWidget("sandbox", { mode: "simple" });
   wireDiseasePresets(sandbox);
