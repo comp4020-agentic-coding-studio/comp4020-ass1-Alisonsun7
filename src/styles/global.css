@@ -250,41 +250,6 @@ input[type="range"] {
   margin-right: 0.3rem;
 }
 
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  gap: var(--space-4);
-  margin-top: var(--space-5);
-}
-
-.card {
-  display: block;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: var(--space-4);
-  text-decoration: none;
-  color: var(--fg);
-}
-
-.card:visited {
-  color: var(--fg);
-}
-
-.card:hover {
-  border-color: var(--card-accent, var(--accent));
-}
-
-.card h2 {
-  margin-top: 0;
-  color: var(--card-accent, var(--accent));
-}
-
-.card p {
-  color: var(--muted);
-  margin-bottom: 0;
-}
-
 [hidden] {
   display: none;
 }
