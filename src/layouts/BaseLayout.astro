@@ -33,8 +33,11 @@ const sections = [
   </head>
   <body data-accent={accent}>
     <header class="site-header">
-      <nav aria-label="Primary">
-        <a class="brand" href={base}>What stops an outbreak</a>
+      <a class="brand" href={base}>What stops an outbreak</a>
+    </header>
+    <nav class="toc" aria-label="Sections">
+      <details>
+        <summary>☰ Sections</summary>
         <ul>
           {
             sections.map((section) => (
@@ -44,8 +47,8 @@ const sections = [
             ))
           }
         </ul>
-      </nav>
-    </header>
+      </details>
+    </nav>
     <main>
       <slot />
     </main>
