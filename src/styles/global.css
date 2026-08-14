@@ -152,7 +152,7 @@ h1 {
 .lede {
   color: var(--muted);
   font-size: 1.1rem;
-  max-width: 46rem;
+  max-width: 60rem;
 }
 
 .panel {
@@ -164,7 +164,7 @@ h1 {
 }
 
 .explainer {
-  max-width: 42rem;
+  max-width: 60rem;
 }
 
 .explainer p {
