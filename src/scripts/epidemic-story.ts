@@ -734,8 +734,10 @@ function setupStandardWidget(prefix: string, engineOpts: StandardWidgetOptions):
   const vaccinationOutput = container.querySelector<HTMLElement>(".rec-vaccination-output");
   const betaSlider = container.querySelector<HTMLInputElement>(".rec-beta-input");
   const betaOutput = container.querySelector<HTMLElement>(".rec-beta-output");
+  const betaInlineOutput = container.querySelector<HTMLElement>(".rec-beta-inline");
   const gammaSlider = container.querySelector<HTMLInputElement>(".rec-gamma-input");
   const gammaOutput = container.querySelector<HTMLElement>(".rec-gamma-output");
+  const gammaInlineOutput = container.querySelector<HTMLElement>(".rec-gamma-inline");
   const r0Output = container.querySelector<HTMLElement>(".rec-r0-value");
   const r0Wrapper = container.querySelector<HTMLElement>(".rec-r0-wrapper");
   const r0Slider = container.querySelector<HTMLInputElement>(".rec-r0-input");
@@ -822,6 +824,8 @@ function setupStandardWidget(prefix: string, engineOpts: StandardWidgetOptions):
       const gamma = Number(gammaSlider.value);
       betaOutput.textContent = beta.toFixed(2);
       gammaOutput.textContent = gamma.toFixed(2);
+      if (betaInlineOutput) betaInlineOutput.textContent = beta.toFixed(2);
+      if (gammaInlineOutput) gammaInlineOutput.textContent = gamma.toFixed(2);
       r0Output.textContent = computeR0(beta, gamma).toFixed(2);
       widget.setInfectionChance(beta);
       widget.setRecoveryFrames(Math.round(FRAMES_PER_DAY / gamma));

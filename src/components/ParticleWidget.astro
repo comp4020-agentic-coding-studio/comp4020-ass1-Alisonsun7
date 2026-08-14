@@ -308,7 +308,12 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
         const gammaTicks = tickValues(0.03, 0.5);
         return (
           <div class="rec-slider rec-beta-gamma">
-            <label for={`${id}-beta`}>β — transmission rate</label>
+            <label for={`${id}-beta`}>
+              β — transmission rate{" "}
+              <output class="rec-beta-inline" for={`${id}-beta`}>
+                {betaDefault.toFixed(2)}
+              </output>
+            </label>
             <input
               class="rec-range rec-beta-input"
               type="range"
@@ -324,7 +329,12 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
                 <option value={t}></option>
               ))}
             </datalist>
-            <label for={`${id}-gamma`}>γ — recovery rate</label>
+            <label for={`${id}-gamma`}>
+              γ — recovery rate{" "}
+              <output class="rec-gamma-inline" for={`${id}-gamma`}>
+                {gammaDefault.toFixed(2)}
+              </output>
+            </label>
             <input
               class="rec-range rec-gamma-input"
               type="range"
@@ -576,8 +586,11 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-4);
+    justify-content: center;
+    max-width: 34rem;
+    margin-inline: auto;
     margin-block-end: var(--space-3);
+    gap: var(--space-4);
   }
 
   .rec-chart {
