@@ -8,7 +8,7 @@ import ParticleWidget from "../components/ParticleWidget.astro";
   description="An interactive, from-scratch particle simulation exploring what makes an outbreak explode and what makes it end: contact rate, isolation, masks, vaccination, and community structure."
 >
   <h1>What causes an outbreak to explode — and what makes it end?</h1>
-  <p class="lede">One bouncing dot in a room of 149 others, rebuilt from scratch as a particle simulation — scroll through it to see what turns a single case into a sweep through the whole room, and what turns the same outbreak back off.</p>
+  <p class="lede">One bouncing dot in a room of 150 others, rebuilt from scratch as a particle simulation — scroll through it to see what turns a single case into a sweep through the whole room, and what turns the same outbreak back off.</p>
 
   <section class="panel" id="simple-case">
     <h2><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="32" height="32" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="8" cy="10" r="3"></circle><circle cx="20" cy="8" r="3"></circle><circle cx="32" cy="12" r="3"></circle><circle cx="10" cy="24" r="3"></circle><circle cx="30" cy="26" r="3"></circle><circle cx="12" cy="34" r="3"></circle><circle cx="28" cy="34" r="3"></circle><circle cx="20" cy="22" r="3" fill="#fb7159" stroke="#fb7159"></circle></svg></span> One infected person, in a room of 150</h2>
@@ -127,7 +127,14 @@ import ParticleWidget from "../components/ParticleWidget.astro";
     <div class="panel-sub" id="communities">
       <h3><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#94a3b8" stroke-width="2"><line x1="20" y1="2" x2="20" y2="38"></line><line x1="2" y1="20" x2="38" y2="20"></line><circle cx="10" cy="10" r="2.5" fill="#38bdf8" stroke="none"></circle><circle cx="30" cy="10" r="2.5" fill="#38bdf8" stroke="none"></circle><circle cx="10" cy="30" r="2.5" fill="#38bdf8" stroke="none"></circle><circle cx="30" cy="30" r="2.5" fill="#fb7159" stroke="none"></circle></svg></span> Splitting into separate communities helps</h3>
       <p class="explainer">Now the same room is split into four separate communities — the lines below aren't decoration, they're the boundaries. People spend nearly all their time inside their own community and bounce off its walls just like in the simple case; only a small, fixed chance each frame sends someone travelling to a different one.</p>
-      <ParticleWidget id="communities" mode="communities" ariaLabel="Communities case: four separate groups with rare travel between them" />
+      <ParticleWidget
+        id="communities"
+        mode="communities"
+        sliders={["r0"]}
+        r0Default={2}
+        r0GammaFixed={0.15}
+        ariaLabel="Communities case: four separate groups with rare travel between them"
+      />
       <p class="explainer">Compare this against the simple case above at similar settings: splitting a population into loosely-connected groups caps how far a single outbreak can spread, even when no individual person is behaving any differently — the structure of who can reach whom matters as much as anyone's individual choices.</p>
     </div>
 
