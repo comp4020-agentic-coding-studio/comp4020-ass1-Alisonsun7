@@ -5,62 +5,55 @@ essay about it.
 
 ## What I built
 
-An interactive explainer for phantom traffic jams: a circular road of cars
-whose speed depends only on the gap ahead, a delayed reaction, and a following
-distance. Three sliders and a brake-tap button let a visitor push the same
-system between two regimes — a tap that dissolves, and a tap that grows into a
-standing wave — to make the point that a jam doesn't need an accident or a red
-light, just the wrong combination of density, distance, and delay.
+*What causes an outbreak, and what stops one?* — a single scrollytelling page
+built around one bouncing-particle SIR simulation, reused and progressively
+deepened section by section: a simple case, how to read an outbreak's chart,
+what the virus itself brings to the table (infection radius, infectious
+period, chance per contact), what human activity brings to it (isolation,
+shared errands, communities, travel, masks, vaccination), where real diseases
+sit on the R0 scale, a sandbox, and a two-choice quiz. One number, R0 = β/γ,
+runs through every module as the throughline.
 
 ## The moments that mattered
 
-1. **Delay as a ring buffer, not a smoothed average.** The obvious way to model
-   driver reaction time is to exponentially smooth the perceived gap/velocity.
-   I used a fixed-length ring buffer instead, so a car's decision at tick `t`
-   reads a real sample from `t − reactionTicks` ago rather than a blended
-   value. Smoothing damps a signal; it doesn't create the phase lag that lets a
-   disturbance outrun a driver's correction, which is the actual mechanism the
-   whole simulator is meant to demonstrate. I chose the ring buffer *before*
-   writing the amplify/decay tests, specifically because a smoothed model would
-   have made those tests unfalsifiable — any parameter set would just settle,
-   never sustain a wave —
-   ([`26abb8e`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Alisonsun7/commit/26abb8e)).
+1. **Throwing out a working prototype and researching the shape of a good one
+   before rebuilding.** The first build was a phantom-traffic-jam simulator
+   that worked, but I judged it had drifted into a multi-canvas dashboard, and
+   restarted from an empty page
+   ([`5bd6e76`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Alisonsun7/commit/5bd6e76)).
+   Rather than immediately rebuild, I spent time reading three reference
+   sites — `john.fun/elevators`, a 3Blue1Brown-style particle epidemic sim, and
+   Kevin Simler's `outbreak` (source read directly, not just the rendered
+   page) — specifically to check my instinct that "one idea" still permits
+   many controls. All three turned out to share the same shape: one simulation
+   engine, with new variables introduced one section at a time, never several
+   unrelated widgets side by side. That's the structure the current page
+   follows.
 
-2. **Measuring the model before asserting on it.** Rather than guess parameter
-   values for the "thesis" test and iterate until assertions passed, I first
-   ran a throwaway probe script logging wave strength and average speed over
-   900 ticks for several candidate scenarios, and read the actual traces. That
-   surfaced two genuinely distinct regimes — a damped oscillation that decays
-   within a few seconds, and a wave that sustains or grows — and the specific
-   parameter sets that produce each became both the test fixtures and the
-   "Sunday morning" / "school pickup" presets a visitor sees
-   ([`6516933`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Alisonsun7/commit/6516933)).
-   That's how I knew the demo wasn't just plausible-looking: the numbers came
-   from watching the model, not from tuning it to match a claim I'd already
-   decided was true.
+2. **Replacing an abstract R0 slider with a spatial metaphor.** The first
+   epidemic prototype exposed contact rate as a bare network-density slider.
+   Following what the particle-sim reference actually does, I rebuilt the
+   engine so R0 emerges from motion, infection radius, and density instead of
+   being handed to the visitor as a number
+   ([`947aff1`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Alisonsun7/commit/947aff1)) —
+   a visitor sees *why* the number moves, not just that it does.
 
-3. **A closure-narrowing bug, and a self-inflicted one on top of it.**
-   `astro check` flagged three "possibly null" errors inside the RAF `frame()`
-   closure, even though an early-return guard above it had already checked the
-   same variables — TypeScript doesn't carry that narrowing into a nested
-   function. Fixing it, I used a broad `replace_all` rename that collided with
-   a variable of the intended target name already in scope, producing a
-   self-referential `const canvas = canvas`. I caught it by re-reading the diff
-   before running checks rather than trusting the rename, and fixed both issues
-   by rewriting the file with distinct, non-colliding names for the nullable
-   and non-null bindings
-   ([`3fd1537`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Alisonsun7/commit/3fd1537)).
-   The lesson that stuck enough to write down: a blanket rename is only safe
-   when the new name isn't already live somewhere else in the same scope.
+3. **A real containment bug, caught by watching the simulation rather than
+   trusting the code.** `blockIsolationZone` only evaluated its entry check on
+   a narrow top-edge crossing case; every other approach direction was
+   unconditionally reflected, so in practice zero outside particles ever
+   entered the isolation zone — the opposite of the intended small leak. I
+   rewrote the check to test any crossing attempt, not one specific window
+   ([`cd84905`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Alisonsun7/commit/cd84905)).
 
-4. **Reading the UI back against its own data.** While polishing, I noticed
-   `Preset.description` — a sentence written for each scenario — was never
-   rendered anywhere; the preset buttons were separately hand-written with just
-   a label, duplicating data that already existed in `presets.ts`. Generating
-   the buttons from `PRESETS` directly and using the description as the
-   accessible label fixed both the duplication and the unused copy in one
-   change
-   ([`f764dec`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Alisonsun7/commit/f764dec)).
+4. **A harness lesson that changed how I verify mobile layout.** A screenshot
+   at `--window-size=390` looked fine, but the real 390px marking viewport
+   showed the floating table of contents overlapping page content. Headless
+   Chrome on macOS won't render a CSS viewport narrower than ~500px — it crops
+   a wider layout instead, so the screenshot lied. I wrote the gotcha into
+   `CLAUDE.md` and switched to an `<iframe width="390">` harness for every
+   later check, which is how the TOC-overlap bug surfaced and got fixed
+   ([`7682cb4`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Alisonsun7/commit/7682cb4)).
 
 ## Before you ship
 

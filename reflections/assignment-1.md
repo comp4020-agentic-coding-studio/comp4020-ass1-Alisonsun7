@@ -1,22 +1,26 @@
 # Reflection — Assignment 1
 
-**The breakthrough that moved the work forward** was realising I could
-empirically probe my own simulation before writing the test that would prove
-its central claim, instead of guessing parameters and hoping assertions
-passed. I wrote a disposable script that logged wave strength and average
-speed over hundreds of ticks for a handful of candidate scenarios, and only
-then picked the two that actually showed a clean decay versus a sustained
-wave. Once I could see the real behaviour, the test stopped being a hope and
-became a description of something I'd already watched happen — and those same
-measured scenarios became the "Sunday morning" and "school pickup" presets a
-visitor clicks on the page.
+**The breakthrough that moved the work forward** was deleting a prototype that
+already worked. My first build was a traffic-jam simulator, and it ran fine —
+but it had grown into three loosely related canvases, which is the opposite of
+"one strong idea." Instead of patching it, I threw it away and, before writing
+a line of the replacement, read the source of three reference sites
+(`john.fun/elevators`, a 3Blue1Brown-style particle epidemic sim, Kevin
+Simler's `outbreak`) to check what "one idea" actually looks like in a working
+example. All three turned out to be one simulation engine with new variables
+introduced a section at a time, never separate widgets bolted on side by side.
+That's the structure I rebuilt the epidemic simulation around, and it's the
+reason the current page holds together instead of reading as a features list.
 
-**What this changed about who I want to be as a developer** is where I put my
-scepticism. It's easy to trust a model because the code compiles and the
-numbers move in a plausible direction; it's harder, and more honest, to ask
-whether the specific behaviour you're claiming actually happens under the
-parameters you picked. The same instinct caught a subtler bug later: a
-`replace_all` rename that looked correct in isolation but produced a
-self-referential variable once I re-read the whole file rather than trusting
-the diff summary. I want the habit that stuck here to generalise — measure and
-re-read before asserting, especially in the moment it feels fastest to skip.
+**What this changed about who I want to be as a developer** is how much I now
+trust looking over trusting logic. The isolation-zone bug — outside particles
+could never enter, only leave, because the entry check only ran on one narrow
+crossing case — passed every type check and every existing test; I only found
+it by watching the simulation run and noticing the isolation zone never let
+anyone in. The mobile-viewport bug was the same lesson from a different angle:
+a screenshot at 390px looked clean, but the real 390px viewport didn't, because
+headless Chrome quietly renders a wider layout underneath a narrow image. Both
+times the code gave no signal anything was wrong; only looking at the actual
+output did. I want that instinct — distrust a screenshot or a passing check
+until I've confirmed it's showing me the real thing — to be the default, not
+something I only remember to do when a bug forces it.
