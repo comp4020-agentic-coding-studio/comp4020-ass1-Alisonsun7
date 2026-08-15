@@ -55,8 +55,4 @@ runs through every module as the throughline.
    later check, which is how the TOC-overlap bug surfaced and got fixed
    ([`7682cb4`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Alisonsun7/commit/7682cb4)).
 
-## Before you ship
 
-`pnpm check:evidence` verifies your citations resolve to real commits, that the
-current reflection entry is in `reflections/`, and that your `CLAUDE.md` is
-there — before a marker ever opens the file.
