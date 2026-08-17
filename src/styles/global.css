@@ -1,21 +1,26 @@
 :root {
-  --bg: #f6f6fb;
-  --surface: #fff;
-  --fg: #16171d;
-  --muted: #5b5f6b;
-  --border: #e1e3ea;
-  --radius: 0.75rem;
+  --bg: #fbf3e7;
+  --surface: #fffdf8;
+  --fg: #15130f;
+  --muted: #6b6459;
+  --border: #15130f;
+  --border-width: 2px;
+  --shadow-hard: 5px 5px 0 var(--border);
+  --radius: 0;
   --space-2: 0.5rem;
   --space-3: 1rem;
   --space-4: 1.5rem;
   --space-5: 2.5rem;
-  --accent: #0b5fff;
-  --accent-fg: #fff;
-  --focus: #0b5fff;
+  --accent: #ff5a36;
+  --accent-fg: #15130f;
+  --focus: #2e6ff2;
+  --font-display: "Lexend Mega", system-ui, sans-serif;
+  --font-body: "Public Sans", system-ui, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, monospace;
 }
 
 body[data-accent="blue"] {
-  --accent: #0b5fff;
+  --accent: #ff5a36;
 }
 
 body[data-accent="violet"] {
@@ -40,7 +45,7 @@ body[data-accent="rose"] {
 
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-body);
   line-height: 1.6;
   color: var(--fg);
   background: var(--bg);
@@ -61,7 +66,7 @@ a:visited {
 
 .site-header {
   background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-width) solid var(--border);
   padding: var(--space-3) var(--space-4);
 }
 
@@ -69,7 +74,11 @@ a:visited {
   display: block;
   max-width: min(75rem, 96vw);
   margin: 0 auto;
+  font-family: var(--font-display);
   font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--fg);
   text-decoration: none;
 }
@@ -83,9 +92,9 @@ a:visited {
 
 .toc details {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+  box-shadow: var(--shadow-hard);
 }
 
 .toc summary {
@@ -102,7 +111,7 @@ a:visited {
 }
 
 .toc details[open] summary {
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-width) solid var(--border);
 }
 
 .toc ul {
@@ -144,6 +153,15 @@ main {
   padding: var(--space-4);
 }
 
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
 h1 {
   font-size: clamp(1.75rem, 1.3rem + 1.8vw, 2.5rem);
   margin-bottom: var(--space-2);
@@ -157,10 +175,11 @@ h1 {
 
 .panel {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
   padding: var(--space-4);
-  margin-block: var(--space-4);
+  margin-block: var(--space-5);
 }
 
 .explainer {
@@ -187,6 +206,7 @@ h1 {
 }
 
 .control output {
+  font-family: var(--font-mono);
   font-weight: 400;
   color: var(--muted);
 }
@@ -198,21 +218,29 @@ input[type="range"] {
 
 .btn {
   font: inherit;
-  border: 1px solid var(--border);
+  font-weight: 700;
+  border: var(--border-width) solid var(--border);
   background: var(--surface);
   color: var(--fg);
   border-radius: 999px;
   padding: 0.55rem 1.1rem;
+  box-shadow: 3px 3px 0 var(--border);
   cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
 .btn:hover {
   border-color: var(--accent);
 }
 
+.btn:active {
+  box-shadow: none;
+  transform: translate(3px, 3px);
+}
+
 .btn-primary {
   background: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--border);
   color: var(--accent-fg);
 }
 
@@ -235,6 +263,7 @@ input[type="range"] {
 
 .stat .value {
   display: block;
+  font-family: var(--font-mono);
   font-size: 1.6rem;
   font-weight: 700;
 }

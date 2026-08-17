@@ -521,8 +521,9 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
     max-width: 34rem;
     height: auto;
     background: #000;
-    border: 1px solid var(--border);
+    border: var(--border-width) solid var(--border);
     border-radius: var(--radius);
+    box-shadow: var(--shadow-hard);
   }
 
   .rec-pause-row {
@@ -545,7 +546,7 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
     margin: 0;
     padding: 0.3rem 0.85rem;
     background: var(--bg);
-    border: 1px solid var(--border);
+    border: var(--border-width) solid var(--border);
     border-radius: 999px;
     font-size: 0.8rem;
     font-weight: 700;
@@ -556,7 +557,7 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
     display: flex;
     overflow: hidden;
     margin-block-end: var(--space-3);
-    border: 1px solid var(--border);
+    border: var(--border-width) solid var(--border);
     border-radius: 999px;
   }
 
@@ -688,6 +689,7 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
   }
 
   .rec-slider output {
+    font-family: var(--font-mono);
     font-weight: 400;
     color: var(--muted);
   }
@@ -700,8 +702,9 @@ const orderedSliders = SLIDER_ORDER.filter((kind) => sliders.includes(kind));
     margin: var(--space-2) 0 0;
     padding: var(--space-2) var(--space-3);
     background: var(--bg);
-    border: 1px solid var(--border);
+    border: var(--border-width) solid var(--border);
     border-radius: var(--radius);
+    font-family: var(--font-mono);
     font-weight: 600;
   }
 

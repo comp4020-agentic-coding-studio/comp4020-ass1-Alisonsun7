@@ -1,26 +1,9 @@
 # Reflection — Assignment 1
 
-**The breakthrough that moved the work forward** was deleting a prototype that
-already worked. My first build was a traffic-jam simulator, and it ran fine —
-but it had grown into three loosely related canvases, which is the opposite of
-"one strong idea." Instead of patching it, I threw it away and, before writing
-a line of the replacement, read the source of three reference sites
-(`john.fun/elevators`, a 3Blue1Brown-style particle epidemic sim, Kevin
-Simler's `outbreak`) to check what "one idea" actually looks like in a working
-example. All three turned out to be one simulation engine with new variables
-introduced a section at a time, never separate widgets bolted on side by side.
-That's the structure I rebuilt the epidemic simulation around, and it's the
-reason the current page holds together instead of reading as a features list.
+**1. What was the breakthrough that moved the work forward?**
+The breakthrough that moved the work forward was realising that the problem with my first prototype was conceptual rather than technical. The traffic-jam simulator worked, but its interaction did not communicate the idea intuitively. I repeatedly asked Claude to revise it, yet the changes only addressed surface details, and the project made no real progress. The issue was not simply that the AI misunderstood me; I had not formed a clear enough vision of the experience I wanted.
 
-**What this changed about who I want to be as a developer** is how much I now
-trust looking over trusting logic. The isolation-zone bug — outside particles
-could never enter, only leave, because the entry check only ran on one narrow
-crossing case — passed every type check and every existing test; I only found
-it by watching the simulation run and noticing the isolation zone never let
-anyone in. The mobile-viewport bug was the same lesson from a different angle:
-a screenshot at 390px looked clean, but the real 390px viewport didn't, because
-headless Chrome quietly renders a wider layout underneath a narrow image. Both
-times the code gave no signal anything was wrong; only looking at the actual
-output did. I want that instinct — distrust a screenshot or a passing check
-until I've confirmed it's showing me the real thing — to be the default, not
-something I only remember to do when a bug forces it.
+Instead of continuing to patch the prototype, I stepped back and studied interactive reference sites. I focused on how their interactions guided attention and developed an argument. A recurring pattern was that one simulation remained central while new variables were introduced progressively. This gave each section a clear purpose and made the relationships visible. It became the organising principle for my rebuilt epidemic simulator. Each section now extends the same model, so the page gradually explains how a disease spreads and how interventions affect the outcome.
+
+**2. What did this work change about who I want to be as a software developer?** 
+What this work changed about who I want to be as a software developer is my understanding of research, judgement, and iteration. AI can help me find related work, explore alternatives, and implement ideas, but it cannot define a product’s purpose or decide what a good result looks like. I do not need a complete design before I begin, but I need a provisional mental model and criteria for evaluating it; otherwise, prompting becomes a series of disconnected fixes. I also learned that discarding a functional prototype is not wasted work when its central idea is wrong. Strong results emerge through observation, comparison, and revision. I want to become a developer who studies existing work critically, remains responsible for design decisions, and uses AI to sharpen a direction rather than replace one.
